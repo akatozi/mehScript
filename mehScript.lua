@@ -10,7 +10,7 @@ util.require_natives("1660775568")
     local InSession = function() return util.is_session_started() and not util.is_session_transition_active() end
     local FormatSpace = function(path) return string.gsub(path," > ",">") end
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(FormatSpace(path))) end
-    local SetPathVal = function(path, state) menu.set_value(menu.ref_by_path(FormatSpace(path)), state) end
+    local SetPathVal = function(path, state) if dev then Console(FormatSpace(path) .. " / " .. tostring(state)) end menu.set_value(menu.ref_by_path(FormatSpace(path)), state) end
     local ClickPath = function(path) menu.trigger_command(menu.ref_by_path(FormatSpace(path))) end
     local Notify = function(str) if notifications_enabled then if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str )  else util.toast("= mehScript =\n"..str) end end  end
 
@@ -31,6 +31,7 @@ util.require_natives("1660775568")
             ["Nuke Button"] = "Boutton Nucléaire",
             ["Nuke attempt on "] = "Tentative de Nucléarisation sur ",
             ["Spectate"] = "Observer",
+            ["PvP"] = "JcJ",
             ["Self"] = "Soi",
             ["Script Host Bruteforce"] = "Être Hôte de Script par la Force",
             ["Movement"] = "Mouvement",
@@ -52,6 +53,7 @@ util.require_natives("1660775568")
             ["Regular"] = "Classique",
             ["Ultimate"] = "Ultime",
             ["Setup"] = "Préréglages",
+            ["Disable RP Gain"] = "Désactiver Gain de RP",
             ["Job"] = "Activité",
             ["Gigachad"] = "Gigachad",
             ["Protections"] = "Protections",
@@ -95,7 +97,9 @@ util.require_natives("1660775568")
             ["Radio"] = "Radio",
             ["Radio Everywhere"] = "Radio Partout",
             ["Famous GTA Songs"] = "Musiques GTA Connues",
-            ["Auto Remove Bounty"] = "Retirer Prime Automatiquement",
+            ["Auto Remove Bounty"] = "Retirer Auto. Prime",
+            ["Auto Skip Conversation"] = "Passe Auto. Dialogues",
+            ["Auto Skip Cutscene"] = "Passe Auto. Cinématiques",
         }
     }
 
@@ -130,7 +134,7 @@ util.require_natives("1660775568")
 -- Update
 --===============--
 
-    local version = "0.01"
+    local version = "0.02"
     local wait_update = menu.action(menu.my_root(), Translate("Looking For Update") .. " ...", {}, "", function() end)
     local FormatVersion = function(str)
         _, c = str:gsub("%.","")
@@ -140,6 +144,7 @@ util.require_natives("1660775568")
         return tonumber(str)
     end
 
+    dev = false
     local response = false
     async_http.init("raw.githubusercontent.com", "/akat0zi/mehScript/main/version", function(output)
         response = true
@@ -162,6 +167,7 @@ util.require_natives("1660775568")
             end)
         elseif formated_version > formated_output then
             version = version.." Dev"
+            dev = true
         end
     end, function() response = true end)
     async_http.dispatch()
@@ -392,32 +398,13 @@ util.require_natives("1660775568")
         -- session
 
             local session = online:list(Translate("Session"))
-            session:action(Translate("Crash All Players"),{},"",function()
-                if #session_players > 0 then
-                    for pid, ref in pairs(session_players) do
-                        if pid ~= players.user() and ref ~= nil then
-                            StartAttack("crash", pid)
-                            menu.set_menu_name(ref, menu.get_menu_name(ref) .. " [Crash]")
-                        end
-                    end
-                    util.yield(15000)
-                    for pid in pairs(session_players) do
-                        if pid ~= players.user() and ref ~= nil then
-                            StartAttack("kick", pid)
-                            menu.set_menu_name(ref, menu.get_menu_name(ref) .. " [Kick]")
-                        end
-                    end
-                    Notify(Translate("All Players Crashed"))
-                else
-                    Notify(Translate("You Are Alone"))
-                end
-            end)
+            
+            table.insert(setup["script"], session:toggle(Translate("Show OTR Players"),{},"",function(on)
+                util.yield()
+                Commands("revealotr " .. GetOn(on))
+            end, GetPathVal("Online > Reveal Off The Radar Players")))
 
-            session:divider(Translate("Players"))
-
-        -- features
-
-            table.insert(setup["script"], online:toggle(Translate("Spoof Session Informations"), {}, "", function(on)
+            table.insert(setup["script"], session:toggle(Translate("Spoof Session Informations"), {}, "", function(on)
                 if on then
                     Commands("spoofsession storymode")
                     ClickPath("Online > Spoofing > Session Spoofing > Session Type > Invalid")
@@ -427,7 +414,7 @@ util.require_natives("1660775568")
                 end
             end))
 
-            table.insert(setup["script"], online:toggle(Translate("Script Host Bruteforce"), {}, "", function(on)
+            table.insert(setup["script"], session:toggle(Translate("Script Host Bruteforce"), {}, "", function(on)
                 Commands("klepto " .. GetOn(on))
                 while on do
                     if InSession() then
@@ -438,6 +425,10 @@ util.require_natives("1660775568")
                     util.yield(1000)
                 end
             end))
+
+            session:divider(Translate("Players"))
+
+        -- features
 
             local bounty_address = 1835502 + 4 + 1 + (players.user() * 3)
             table.insert(setup["script"], online:toggle_loop(Translate("Auto Remove Bounty"), {}, "", function()
@@ -451,10 +442,11 @@ util.require_natives("1660775568")
                 util.yield(5000)
             end))
 
-            table.insert(setup["script"], online:toggle(Translate("Show OTR Players"),{},"",function(on)
-                util.yield()
-                Commands("revealotr " .. GetOn(on))
-            end, GetPathVal("Online > Reveal Off The Radar Players")))
+            online:toggle_loop(Translate("Disable RP Gain"), {}, "", function()
+                memory.write_float(memory.script_global(262145 + 1), 0)
+            end, function()
+                memory.write_float(memory.script_global(262145 + 1), 1)
+            end)
 
     --===============--
     -- Game
@@ -525,6 +517,18 @@ util.require_natives("1660775568")
             end)
 
         -- features
+
+            game:toggle_loop(Translate("Auto Skip Conversation"),{},"",function()
+                if AUDIO.IS_SCRIPTED_CONVERSATION_ONGOING() then
+                    AUDIO.SKIP_TO_NEXT_SCRIPTED_CONVERSATION_LINE()
+                end
+                util.yield()
+            end)
+
+            game:toggle_loop(Translate("Auto Skip Cutscene"),{},"",function()
+                CUTSCENE.STOP_CUTSCENE_IMMEDIATELY()
+                util.yield(100)
+            end)
 
             game:toggle(Translate("Show FPS"),{},"",function(on)
                 util.yield()
@@ -724,21 +728,36 @@ util.require_natives("1660775568")
         -- setup
 
             Setup = function(mode)
-                local gigachad_state = false
-                local pvp_state = false
+                SetupBis(mode)
                 if mode == Translate("Gigachad") then
-                    gigachad_state = true
+                    for _, path in pairs(setup["gigachad"]) do
+                        SetPathVal(path, true)
+                    end
+                    for _, ref in pairs(setup["script"]) do
+                        menu.set_value(ref, true)
+                    end
                 elseif mode == Translate("PvP") then
-                    pvp_state = true
+                    for _, path in pairs(setup["pvp"]) do
+                        SetPathVal(path, true)
+                    end
                 end
-                for _, path in pairs(setup["gigachad"]) do
-                    SetPathVal(path, gigachad_state)
+            end
+
+            SetupBis = function(mode)
+                if mode ~= Translate("Gigachad") then
+                    for _, path in pairs(setup["gigachad"]) do
+                        SetPathVal(path, false)
+                    end
                 end
-                for _, ref in pairs(setup["script"]) do
-                    menu.set_value(ref, gigachad_state)
+                if mode ~= Translate("Gigachad") then
+                    for _, ref in pairs(setup["script"]) do
+                        menu.set_value(ref, false)
+                    end
                 end
-                for _, path in pairs(setup["pvp"]) do
-                    SetPathVal(path, pvp_state)
+                if mode ~= Translate("PvP") then
+                    for _, path in pairs(setup["pvp"]) do
+                        SetPathVal(path, false)
+                    end
                 end
             end
 
@@ -877,8 +896,8 @@ util.require_natives("1660775568")
                         Commands("spectate"..players.get_name(pid) .. " " .. GetOn(on))
                     end
                 end)
-            end
         end
+    end
 
     session_players = {}
     PlayerList = function(pid)
@@ -896,5 +915,3 @@ util.require_natives("1660775568")
 --===============--
 -- End
 --===============--
-
-util.keep_running()
