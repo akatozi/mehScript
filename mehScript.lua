@@ -12,7 +12,7 @@ util.require_natives("1660775568")
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(FormatSpace(path))) end
     local SetPathVal = function(path, state) if dev then Console(FormatSpace(path) .. " / " .. tostring(state)) end menu.set_value(menu.ref_by_path(FormatSpace(path)), state) end
     local ClickPath = function(path) menu.trigger_command(menu.ref_by_path(FormatSpace(path))) end
-    local Notify = function(str) if notifications_enabled then if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str )  else util.toast("= mehScript =\n"..str) end end  end
+    local Notify = function(str, update_available = false) if notifications_enabled or update_available then if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("= mehScript =\n"..str) end end end
 
 --===============--
 -- Translation
@@ -68,7 +68,7 @@ util.require_natives("1660775568")
             ["Language"] = "Langue",
             ["Version"] = "Version",
             ["available. Press Update to get it."] = "disponible. Appui sur Mettre à jour pour l'obtenir.",
-            ["Update"] = "Mettre à Jour",
+            ["Update to"] = "Mettre à Jour vers",
             ["Notifications"] = "Notifications",
             ["Script failed to download. Please try again later. If this continues to happen then manually update via github."] = "Téléchargement échoué. Réessayez plus tard. Si cela continu d'arriver, mettez à jour via le github.",
             ["Remove Max Aesthetic Parts"] = "Retirer les Pièces Esthétiques Max",
@@ -127,15 +127,14 @@ util.require_natives("1660775568")
     end
     if not supported_lang then
         user_lang = "en"
-        util.toast("[ mehScript ]\nSorry your language isn't supported. Script language set to English.")
+        util.toast("= mehScript =\nSorry your language isn't supported. Script language set to English.")
     end
 
 --===============--
 -- Update
 --===============--
 
-    local version = "0.02"
-    local wait_update = menu.action(menu.my_root(), Translate("Looking For Update") .. " ...", {}, "", function() end)
+    local version = "0.0.3"
     local FormatVersion = function(str)
         _, c = str:gsub("%.","")
         if c == 2 then
@@ -151,12 +150,12 @@ util.require_natives("1660775568")
         local formated_version = FormatVersion(version)
         local formated_output = FormatVersion(output)
         if formated_version < formated_output then
-            Notify(Translate("Version") .. " " .. output .. " " .. Translate("available. Press Update to get it."))
-            menu.action(menu.my_root(), Translate("Update") .. " ( V "..output..")", {}, "", function()
+            Notify(Translate("Version") .. " " .. string.gsub(output, "\n", "", 1) .. " " .. Translate("available.\nPress Update to get it."), true)
+            menu.action(menu.my_root(), Translate("Update to") .. " ".. output, {}, "", function()
                 async_http.init('raw.githubusercontent.com','/akat0zi/mehScript/main/mehScript.lua',function(a)
                     local err = select(2,load(a))
                     if err then
-                        Notify(Translate("Script failed to download. Please try again later. If this continues to happen then manually update via github."))
+                        Notify(Translate("Script failed to download. Please try again later. If this continues to happen then manually update via github."), true)
                     return end
                     local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
                     f:write(a)
@@ -174,7 +173,6 @@ util.require_natives("1660775568")
     repeat
         util.yield()
     until response
-    menu.delete(wait_update)
 
 --===============--
 -- Main
