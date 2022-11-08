@@ -9,11 +9,14 @@ Added :
   - Disable RP Gain
   - Auto Skip Conversation
   - Auto Skip Cutscene
+
 Fixed :
   - Setup
+
 Moved :
   - Show OTR Player
   - Spoof Session Information
   - Script Host Bruteforce
+
 Removed :
   - Crash All
