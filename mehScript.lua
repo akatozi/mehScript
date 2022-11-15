@@ -29,7 +29,7 @@ util.require_natives("1660775568")
             ["Crash"] = "Crash",
             ["Attempt to Crash "] = "Essai de crash ",
             ["Nuke Button"] = "Boutton Nucléaire",
-            ["Nuke attempt on "] = "Tentative de Nucléarisation sur ",
+            ["Nuke attempt on "] = "Essai de supprimer ",
             ["Spectate"] = "Observer",
             ["PvP"] = "JcJ",
             ["Self"] = "Soi",
@@ -59,7 +59,7 @@ util.require_natives("1660775568")
             ["Protections"] = "Protections",
             ["Game"] = "Jeu",
             ["Rendering"] = "Rendu",
-            ["Cyberwave"] = "Cyberwave",
+            ["Synthwave"] = "Synthwave",
             ["Clear Vision"] = "Vision Dégagée",
             ["Misc"] = "Divers",
             ["Show OTR Players"] = "Affiche Joueurs Invisible Radar",
@@ -67,7 +67,7 @@ util.require_natives("1660775568")
             ["None"] = "Sans",
             ["Language"] = "Langue",
             ["Version"] = "Version",
-            ["available. Press Update to get it."] = "disponible. Appui sur Mettre à jour pour l'obtenir.",
+            ["available.\nPress Update to get it."] = "disponible.\nAppui sur Mettre à jour pour l'obtenir.",
             ["Update to"] = "Mettre à Jour vers",
             ["Notifications"] = "Notifications",
             ["Script failed to download. Please try again later. If this continues to happen then manually update via github."] = "Téléchargement échoué. Réessayez plus tard. Si cela continu d'arriver, mettez à jour via le github.",
@@ -83,23 +83,20 @@ util.require_natives("1660775568")
             ["Take all risks to remove him"] = "Prend tous les risques pour l'éjecter",
             ["Default"] = "Par défaut",
             ["Show FPS"] = "Afficher IPS",
-            ["Crash All Players"] = "Crash Tous les Joueurs",
-            ["All Players Crashed"] = "Tous les Joueurs ont été Crash",
             ["Session"] = "Session",
-            ["Players"] = "Joueurs",
-            ["You Are Alone"] = "Tu es Seul",
             ["Settings"] = "Paramètres",
             ["About"] = "A Propos",
             ["Credits"] = "Credits",
             ["Join Discord"] = "Rejoindre le Discord",
             ["Appearence"] = "Apparence",
-            ["Disapear"] = "Disparaître",
+            ["Disappear"] = "Disparaître",
             ["Radio"] = "Radio",
             ["Radio Everywhere"] = "Radio Partout",
             ["Famous GTA Songs"] = "Musiques GTA Connues",
             ["Auto Remove Bounty"] = "Retirer Auto. Prime",
             ["Auto Skip Conversation"] = "Passe Auto. Dialogues",
             ["Auto Skip Cutscene"] = "Passe Auto. Cinématiques",
+            ["Better than the Stand one."] = "Mieux que celui de Stand."
         }
     }
 
@@ -134,7 +131,7 @@ util.require_natives("1660775568")
 -- Update
 --===============--
 
-    local version = "0.0.3"
+    local version = "0.0.4"
     local FormatVersion = function(str)
         _, c = str:gsub("%.","")
         if c == 2 then
@@ -254,7 +251,7 @@ util.require_natives("1660775568")
 
             local appearence = self:list(Translate("Appearence"))
 
-            appearence:toggle(Translate("Disapear"),{},"",function(on)
+            appearence:toggle(Translate("Disappear"),{},"",function(on)
                 on = GetOn(on)
                 Commands("invisibility " .. on)
                 Commands("otr " .. on)
@@ -424,8 +421,6 @@ util.require_natives("1660775568")
                 end
             end))
 
-            session:divider(Translate("Players"))
-
         -- features
 
             local bounty_address = 1835502 + 4 + 1 + (players.user() * 3)
@@ -465,7 +460,7 @@ util.require_natives("1660775568")
                 menu.set_value(menu.ref_by_path('World>Aesthetic Light>Aesthetic Light'), false)
             end
 
-            game:list_action(Translate("Rendering"), {}, "",{Translate("Default"),Translate("Cyberwave"),Translate("Clear Vision")}, function(index)
+            game:list_action(Translate("Rendering"), {}, "",{Translate("Default"),Translate("Synthwave"),Translate("Clear Vision")}, function(index)
                 ResetRendering()
                 if index == 2 then
                     menu.set_value(menu.ref_by_path('World>Aesthetic Light>Aesthetic Light'), true)
@@ -587,18 +582,12 @@ util.require_natives("1660775568")
                 },
 
                 additional = {
+                    "Online>Protections>Buttplug Kick Reactions>Myself>Block",
                     "Online > Protections > Breakup Kick Reactions > Block",
                     "Online > Protections > Host Kicks > Host Kick Karma",
                     "Online > Protections > Host Kicks > Lessen Host Kicks",
                     "Online > Protections > Breakup Kick Reactions > Karma",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Notification",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Write To Log File",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Write To Console",
                     "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Karma",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Notification",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Write To Log File",
-                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Write To Console",
-                    "Online > Protections > Love Letter & Desync Kicks > Notification When Love Letter Kicked",
                     "Online > Protections > Love Letter & Desync Kicks > Desync Kick Karma",
                     "Online > Protections > Love Letter & Desync Kicks > Block Love Letter Kicks",
                     "Online > Protections > Lessen Breakup Kicks As Host",
@@ -610,16 +599,28 @@ util.require_natives("1660775568")
                     "Online > Protections > Block RID 0 Crash For Others",
                 },
 
+                additional_notif = {
+                    "Online>Protections>Buttplug Kick Reactions>Myself>Notification",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Notification",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Notification",
+                    "Online > Protections > Love Letter & Desync Kicks > Notification When Love Letter Kicked",
+                },
+
+                additional_log = {
+                    "Online>Protections>Buttplug Kick Reactions>Myself>Write To Console",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Write To Console",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Write To Console",
+                    "Online>Protections>Buttplug Kick Reactions>Myself>Write To Log File",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Myself > Write To Log File",
+                    "Online > Protections > Knockoff Breakup Kick Reactions > Someone Else > Write To Log File",
+                },
+
                 special = { -- on = 2
                     "Online > Protections > Events > Infinite Phone Ringing",
                     "Online > Protections > Events > Vehicle Takeover",
                     "Online > Protections > Events > Freeze",
                     "Online > Protections > Events > Love Letter Kick Blocking Event",
                     "Online > Protections > Events > Raw Network Events > PTFX",
-                    "Online > Protections > Events > Raw Network Events > NETWORK_BANK_REQUEST_EVENT",
-                    "Online > Protections > Events > Raw Network Events > NETWORK_PLAY_SOUND_EVENT",
-                    "Online > Protections > Events > Raw Network Events > Explosion",
-                    "Online > Protections > Events > Raw Network Events > Fire",
                     "Online > Protections > Events > Raw Network Events > Remove All Weapons Event",
                     "Online > Protections > Events > Raw Network Events > Remove Weapon Event",
                     "Online > Protections > Events > Raw Network Events > Give Weapon Event",
@@ -665,24 +666,34 @@ util.require_natives("1660775568")
 
             SetProtections = function(mode, state)
                 local add_state = false
+                local log_on = protections_log
+                local notification_on = protections_notification
                 if state then
                     SetProtectionsToggle(3, mode)
-                    if mode == "ultimate" then
+                    if mode == "regular" or mode == "ultimate" then
                         add_state = true
                     end
                 else
+                    log_on = false
+                    notification_on = false
                     SetProtectionsToggle(0, mode)
                 end
                 for _, path in pairs(protection["additional"]) do
                     SetPathVal(path, add_state)
+                end
+                for _, path in pairs(protection["additional_log"]) do
+                    SetPathVal(path, log_on)
+                end
+                for _, path in pairs(protection["additional_notif"]) do
+                    SetPathVal(path, notification_on)
                 end
             end
 
             Protections = function(str)
                 if str == "Regular" then
                     Commands("novotekicks off")
-                    SetProtections("regular", true)
                     SetProtections("ultimate", false)
+                    SetProtections("regular", true)
                 elseif str == "Ultimate" then
                     Commands("novotekicks sctv")
                     SetProtections("regular", true)
@@ -715,7 +726,7 @@ util.require_natives("1660775568")
                 Protections("None")
             end)
 
-            protectionm:action(Translate("Regular"),{},"Crash / Kick Protections On",function()
+            protectionm:action(Translate("Regular"),{},"Crash and Kick Protections On",function()
                 Protections("Regular")
             end)
 
@@ -738,6 +749,7 @@ util.require_natives("1660775568")
                     for _, path in pairs(setup["pvp"]) do
                         SetPathVal(path, true)
                     end
+                    menu.trigger_command(regen_all)
                 end
             end
 
@@ -802,7 +814,7 @@ util.require_natives("1660775568")
                 local credits_action = function(name, detail) credits:action(name, {}, detail, function() end) end
                 credits_action("Akatozi. (me)", "My goal with this script is to have useful features at hand, because I'm still a beginner I used parts of code from other devs more competent than me for some features. I'm not trying to do a 'big' script as LanceScript Reloaded or WiriScript but I want a script that has all the features I need / I use often.")
                 credits:divider("Awesome Devs")
-                credits_action("lance", "Creator of LanceScript\nCyberwave rendering and inspired for no recoil / spread.")
+                credits_action("lance", "Creator of LanceScript\nSynthwave rendering and inspired for no recoil / spread.")
                 credits_action("Prisuhm", "Creator of JinxScript\nAwesome Update function and some crash methods. Display players list.")
                 credits_action("Jerry123", "Creator of JerryScript\nThermal scope.")
             
@@ -817,21 +829,15 @@ util.require_natives("1660775568")
 
     local attack = {
         crash = {
+            "smash",
             "crash",
+            "choke",
+            "flashcrash",
             "ngcrash",
-            "steamroll",
             "footlettuce",
         },
 
         kick = {
-            "pickupkick",
-            "nonhostkick",
-            "hostkick",
-            "blacklist",
-            "orgasmkick",
-            "loveletterkick",
-            "confusionkick",
-            "breakup",
             "kick",
         },
 
@@ -840,78 +846,83 @@ util.require_natives("1660775568")
     StartAttack = function(list, pid)
         for _, cmd in pairs(attack[list]) do
             if players.exists(pid) then
-                Commands(cmd..players.get_name(pid))
+                Commands(cmd .. players.get_name(pid))
             end
+        end
+        if list == "kick" then
+            util.trigger_script_event(1 << pid, {111242367, pid, memory.script_global(2689235 + 1 + (pid * 453) + 318 + 7)})
+            util.trigger_script_event(1 << pid, {0x63D4BFB1, players.user(), memory.read_int(memory.script_global(0x1CE15F + 1 + (pid * 0x257) + 0x1FE))})
+            util.trigger_script_event(1 << pid, {0xB9BA4D30, pid, 0x4, -1, 1, 1, 1})
         end
     end
 
     PlayerMenu = function(pid)
-        if pid ~= players.user() then
-            session_players[pid] = session:action(players.get_name_with_tags(pid), {}, "", function()
-                Commands("p " .. players.get_name(pid))
+        local player = menu.player_root(pid)
+        local player_name = players.get_name(pid)
+        player:divider("mehScript (" .. players.get_name(pid) .. ")")
+
+        -- griefing
+
+            local griefm = player:list(Translate("Griefing"),{},"")
+            griefm:toggle_loop(Translate("Freeze"),{}, Translate("Better than the Stand one."),function()
+                util.trigger_script_event(1 << pid, {0x4868BC31, pid, 0, 0, 0, 0, 0})
+                TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+                util.yield()
             end)
-            
-            player = menu.player_root(pid)
-            name = players.get_name(pid)
-            player:divider("mehScript ("..name..")")
 
-            -- griefing
+        -- attack
 
-                local griefm = player:list(Translate("Griefing"),{},"")
-                griefm:toggle_loop(Translate("Freeze"),{},"",function()
-                    util.trigger_script_event(1 << pid, {0x4868BC31, pid, 0, 0, 0, 0, 0})
-                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
-                    util.yield()
-                end)
+            local attacksm = player:list(Translate("Attack"),{},"")
 
-            -- attack
+            attacksm:action(Translate("Kick"),{},Translate("Use all kick methods"),function()
+                Notify(Translate("Attempt to Kick ") .. player_name)
+                StartAttack("kick",pid)
+            end)
 
-                local attacksm = player:list(Translate("Attack"),{},"")
-
-                attacksm:action(Translate("Kick"),{},Translate("Use all kick methods"),function()
-                    Notify(Translate("Attempt to Kick ")..players.get_name(pid))
-                    StartAttack("kick",pid)
-                    util.trigger_script_event(1 << pid, {111242367, pid, memory.script_global(2689235 + 1 + (pid * 453) + 318 + 7)})
-                    util.trigger_script_event(1 << pid, {0x63D4BFB1, players.user(), memory.read_int(memory.script_global(0x1CE15F + 1 + (pid * 0x257) + 0x1FE))})
-                    util.trigger_script_event(1 << pid, {0xB9BA4D30, pid, 0x4, -1, 1, 1, 1})
-                end)
-
-                attacksm:action(Translate("Crash"),{},Translate("Use all crash methods"),function()
-                    Notify(Translate("Attempt to Crash ")..players.get_name(pid))
-                    StartAttack("crash",pid)
-                end)
-
-                attacksm:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him"),function()
-                    Notify(Translate("Nuke attempt on ")..players.get_name(pid))
-                    StartAttack("crash",pid)
-                    util.yield(5000)
-                    StartAttack("kick",pid)
-                end)
-
-                player:toggle(Translate("Spectate"),{},"",function(on)
-                    util.yield()
-                    if players.exists(pid) then
-                        Commands("spectate"..players.get_name(pid) .. " " .. GetOn(on))
+            attacksm:action(Translate("Crash"),{},Translate("Use all crash methods"),function()
+                Notify(Translate("Attempt to Crash ") .. player_name)
+                StartAttack("crash",pid)
+                local ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)
+                local pos = players.get_position(pid)
+                local mdl = util.joaat("u_m_m_jesus_01")
+                local veh_mdl = util.joaat("oppressor")
+                util.request_model(veh_mdl)
+                util.request_model(mdl)
+                    for i = 1, 10 do
+                        if not players.exists(pid) then
+                            return
+                        end
+                        local veh = entities.create_vehicle(veh_mdl, pos, 0)
+                        local jesus = entities.create_ped(2, mdl, pos, 0)
+                        PED.SET_PED_INTO_VEHICLE(jesus, veh, -1)
+                        util.yield(100)
+                        TASK.TASK_VEHICLE_HELI_PROTECT(jesus, veh, ped, 10.0, 0, 10, 0, 0)
+                        util.yield(1000)
+                        entities.delete_by_handle(jesus)
+                        entities.delete_by_handle(veh)
                     end
-                end)
-        end
+                STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(mdl)
+                STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(veh_mdl)
+            end)
+
+            attacksm:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him"),function()
+                Notify(Translate("Nuke attempt on ") .. player_name)
+                StartAttack("crash",pid)
+                util.yield(5000)
+                StartAttack("kick",pid)
+            end)
+
+            player:toggle(Translate("Spectate"),{},"",function(on)
+                util.yield()
+                if players.exists(pid) then
+                    Commands("spectate" .. player_name .. " " .. GetOn(on))
+                end
+            end)
     end
 
-    session_players = {}
-    PlayerList = function(pid)
-        local ref = session_players[pid]
-        if not players.exists(pid) and ref then
-            menu.delete(ref)
-            session_players[pid] = nil
-        end
+    for _, pid in pairs(players.list()) do
+        PlayerMenu(pid)
     end
-
     players.on_join(PlayerMenu)
-    players.on_leave(PlayerList)
-    players.dispatch_on_join()
-
---===============--
--- End
---===============--
 
 util.keep_running()
