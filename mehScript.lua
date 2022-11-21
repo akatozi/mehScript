@@ -1,4 +1,4 @@
-local version = "0.0.7"
+local version = "0.71"
 util.keep_running()
 
 --===============--
@@ -18,6 +18,7 @@ util.keep_running()
         ["GET_ENTITY_HEALTH"]=function(entity)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.end_call_2(0xEEF059FAD016D209)return native_invoker.get_return_value_int()end,
         ["SET_ENTITY_HEALTH"]=function(entity,health,p2)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.push_arg_int(health)native_invoker.push_arg_int(p2)native_invoker.end_call_2(0x6B76DC1F3AE6E6A3)end,
         ["GET_ENTITY_MAX_HEALTH"]=function(entity)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.end_call_2(0x15D757606D170C3C)return native_invoker.get_return_value_int()end,
+    	["SET_ENTITY_MAX_HEALTH"]=function(entity,value)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.push_arg_int(value)native_invoker.end_call_2(0x166E7CF68597D8B5)end,
     }
     PED={
         ["SET_PED_ARMOUR"]=function(ped,amount)native_invoker.begin_call()native_invoker.push_arg_int(ped)native_invoker.push_arg_int(amount)native_invoker.end_call_2(0xCEA04D83135264CC)end,
@@ -69,25 +70,24 @@ util.keep_running()
         end
     end
 
-    local SupportedLang = function()
-        local supported_lang_table = {"fr"}
-        for _, tested_lang in pairs(supported_lang_table) do
-            if tested_lang == user_lang then
-                supported_lang = true
-                return
-            end
-        end
-        english = true
-        util.toast("= mehScript =\nSorry your language isn't supported. Script language set to English.")
-    end
-
     if not supported_lang then
+        local SupportedLang = function()
+            local supported_lang_table = {"fr"}
+            for _, tested_lang in pairs(supported_lang_table) do
+                if tested_lang == user_lang then
+                    supported_lang = true
+                    return
+                end
+            end
+            english = true
+            util.toast("= mehScript =\nSorry your language isn't supported. Script language set to English.")
+        end
+
         SupportedLang()
     end
 
     local translation_table = {
         fr = {
-            ["Looking For Update"] = "Recherce de Mise à Jour",
             ["Griefing"] = "Embêter",
             ["Freeze"] = "Figer",
             ["Attack"] = "Attaquer",
@@ -114,8 +114,8 @@ util.keep_running()
             ["Levitation Speed"] = "Vitesse de Lévitation",
             ["Normal"] = "Normal",
             ["Slow"] = "Lent",
-            ["Refill Health & Armour"] = "Regénérer Vie et Armure",
-            ["Auto Armour after Death"] = "Armure Après Mort",
+            ["Refill Health & Armor"] = "Regénérer Vie et Armure",
+            ["Auto Armor after Death"] = "Armure Après Mort",
             ["Online"] = "En-ligne",
             ["Regular"] = "Classique",
             ["Ultimate"] = "Ultime",
@@ -132,14 +132,12 @@ util.keep_running()
             ["Show OTR Players"] = "Affiche Joueurs Invisible Radar",
             ["Spoof Session Informations"] = "Spoof Informations de Session",
             ["None"] = "Sans",
-            ["Language"] = "Langue",
             ["Version"] = "Version",
             ["available.\nPress Update to get it."] = "disponible.\nAppui sur Mettre à jour pour l'obtenir.",
             ["Update to"] = "Mettre à Jour vers",
             ["Notifications"] = "Notifications",
             ["Script failed to download. Please try again later. If this continues to happen then manually update via github."] = "Téléchargement échoué. Réessayez plus tard. Si cela continu d'arriver, mettez à jour via le github.",
-            ["Remove Max Aesthetic Parts"] = "Retirer les Pièces Esthétiques Max",
-            ["Press E while aiming to activate"] = "Appui sur E en visant pour l'activer",
+            ["Press E while aiming to activate."] = "Appui sur E en visant pour l'activer.",
             ["Informations"] = "Informations",
             ["Very Fast"] = "Très Rapide",
             ["Log"] = "Log",
@@ -155,8 +153,6 @@ util.keep_running()
             ["About"] = "A Propos",
             ["Credits"] = "Credits",
             ["Join Discord"] = "Rejoindre le Discord",
-            ["Appearence"] = "Apparence",
-            ["Disappear"] = "Disparaître",
             ["Radio"] = "Radio",
             ["Radio Everywhere"] = "Radio Partout",
             ["Famous GTA Songs"] = "Musiques GTA Connues",
@@ -170,8 +166,29 @@ util.keep_running()
             ["Ghost Mode"] = "Mode Fantôme",
             ["Bounty"] = "Prime",
             ["Bounty Ammount"] = "Somme Prime",
+            ["Chose the ammount of the bounty offered automatically."] = "Choisit la valeur de la prime placée en boucle.",
             ["Auto Bounty"] = "Prime Auto.",
+            ["Loop that place a bounty on the player."] = "Place une prime en boucle sur le joueur.",
             ["Bounty Removed: "] = "Prime Retirée: ",
+            ["Undead OTR"] = "Invisible Radar de Mort",
+            ["Infinite ammo in magazine with insane shooting speed."] = "Munitions infini dans le chargeur et cadence de tir incroyable.",
+            ["Weapons will no longer have recoil."] = "Les armes n'auront plus de recul.",
+            ["Weapons will no longer have bullet spread."] = "Les armes n'auront plus de dispertion de balles.",
+            ["Regenerate to max your health and armor."] = "Régénère au max la vie et armure.",
+            ["A body armor will be applied automatically when respawning."] = "Une protection sera appliqué automatiquement lors de la réapparition.",
+            ["Keep your ped dry and clean."] = "Garde le personnage sec et propre.",
+            ["Display on the radar invisible players."] = "Affiche les joueurs invisibles sur le radar.",
+            ["Spoof your session informations so nobody can join you from your R* profile."] = "Masque les informations de la session pour empêcher les gens de vous rejoindre depuis votre progile R*.",
+            ["Use all methods to become script host and remain so."] = "Utilise toutes les méthodes pour devenir hôte de script et le rester.",
+            ["Automatically remove bounty on your head."] = "Retire automatiquement les primes sur ta tête.",
+            ["You will not gain any RP."] = "Tu ne gagneras plus de RP.",
+            ["Turn you off the radar without notifying other players."] = "Devient invisible sur le radar sans avertir les autres joueurs.",
+            ["You are able to listen to the radio everywhere."] = "Tu es capable d'écouter la radio partout.",
+            ["Click to play the song."] = "Clique pour jouer la musique.",
+            ["Automatically skip all conversations."] = "Passe automatiquement les dialogues.",
+            ["Automatically skip all cutscenes."] = "Passe automatiquement les cinématiques.",
+            ["Display your FPS on screen."] = "Affiches les IPS sur l'écran.",
+            ["The player can't shoot you anymore, same for you."] = "Le joueur ne peut plus te tirer dessus, pareil pour toi.",
         }
     }
 
@@ -181,7 +198,7 @@ util.keep_running()
         else
             local translated_str = translation_table[user_lang][str]
             if translated_str == nil or translated_str == "" then
-                return str
+                return "* " .. str
             end
             return translated_str
         end
@@ -202,19 +219,9 @@ util.keep_running()
 -- Update
 --===============--
 
-    local FormatVersion = function(str)
-        _, c = str:gsub("%.","")
-        if c == 2 then
-            return tonumber(string.reverse(string.gsub(string.reverse(str), "%.", "", 1)))
-        end
-        return tonumber(str)
-    end
-
     local update_available
     async_http.init("raw.githubusercontent.com", "/akat0zi/mehScript/main/version", function(output)
-        local formated_version = FormatVersion(version)
-        local formated_output = FormatVersion(output)
-        if formated_version < formated_output then
+        if version < output then
             update_available = true
             Notify(Translate("Version") .. " " .. string.gsub(output, "\n", "", 1) .. " " .. Translate("available.\nPress Update to get it."))
             update_button = menu.action(menu.my_root(), Translate("Update to") .. " ".. output, {}, "", function()
@@ -258,7 +265,7 @@ util.keep_running()
             lua_path .. ">" .. Translate("Self") .. ">" .. Translate("Weapons") .. ">" .. Translate("Thermal Scope"),
             lua_path .. ">" .. Translate("Self") .. ">" .. Translate("Weapons") .. ">" .. Translate("No Recoil"),
             lua_path .. ">" .. Translate("Self") .. ">" .. Translate("Weapons") .. ">" .. Translate("No Spread"),
-            lua_path .. ">" .. Translate("Self") .. ">" .. Translate("Auto Armour after Death"),
+            lua_path .. ">" .. Translate("Self") .. ">" .. Translate("Auto Armor after Death"),
         },
     }
 
@@ -307,29 +314,11 @@ util.keep_running()
                 Notify(Translate("Levitation Mode") .. " " .. levitation_mode_table[index])
             end)
 
-        -- appearence
-
-            local appearence = self:list(Translate("Appearence"))
-
-            appearence:toggle(Translate("Disappear"),{},"",function(on)
-                on = GetOn(on)
-                Commands("invisibility " .. on)
-                Commands("otr " .. on)
-            end)
-
-            table.insert(setup["script"], appearence:toggle(Translate("Always Clean"),{""},"",function(on)
-                util.yield()
-                on = GetOn(on)
-                Commands("lockwetness " .. on)
-                Commands("noblood " .. on)
-                Commands("wetness 0")
-            end))
-
         -- weapons
 
             local weaponm = self:list(Translate("Weapons"))
 
-            weaponm:toggle(Translate("Rapid Fire"),{},"",function(on)
+            weaponm:toggle(Translate("Rapid Fire"),{},Translate("Infinite ammo in magazine with insane shooting speed."),function(on)
                 util.yield()
                 on = GetOn(on)
                 Commands("rapidfire " .. on)
@@ -338,7 +327,7 @@ util.keep_running()
             end, menu.get_value(menu.ref_by_command_name("rapidfire")) and menu.get_value(menu.ref_by_command_name("vehiclerapidfire")) and menu.get_value(menu.ref_by_command_name("noreload")))
 
             local thermal_command = menu.ref_by_path('Game>Rendering>Thermal Vision')
-            weaponm:toggle_loop(Translate("Thermal Scope"), {}, Translate("Press E while aiming to activate"), function()
+            weaponm:toggle_loop(Translate("Thermal Scope"), {}, Translate("Press E while aiming to activate."), function()
                 local aiming = PLAYER.IS_PLAYER_FREE_AIMING(players.user())
                 if GRAPHICS.GET_USINGSEETHROUGH() and not aiming then
                     menu.trigger_command(thermal_command, 'off')
@@ -366,7 +355,7 @@ util.keep_running()
             end
 
             local modified_weapon_recoil = {}
-            table.insert(setup["script"], weaponm:toggle_loop(Translate("No Recoil"),{},"",function()
+            table.insert(setup["script"], weaponm:toggle_loop(Translate("No Recoil"),{},Translate("Weapons will no longer have recoil."),function()
                 if not util.is_session_transition_active() then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x2F4) == 0 then return end
@@ -384,7 +373,7 @@ util.keep_running()
 
             local modified_weapon_spread_1 = {}
             local modified_weapon_spread_2 = {}
-            table.insert(setup["script"], weaponm:toggle_loop(Translate("No Spread"),{},"",function()
+            table.insert(setup["script"], weaponm:toggle_loop(Translate("No Spread"),{},Translate("Weapons will no longer have bullet spread."),function()
                 if not util.is_session_transition_active() then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x74) == 0 and memory.read_float(weapon + 0x124) == 0 then return end
@@ -409,13 +398,13 @@ util.keep_running()
 
         -- features
 
-            local regen_all = self:action(Translate("Refill Health & Armour"),{},"",function()
+            local regen_all = self:action(Translate("Refill Health & Armor"),{},Translate("Regenerate to max your health and armor."),function()
                 ENTITY.SET_ENTITY_HEALTH(players.user_ped(), ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()))
                 PED.SET_PED_ARMOUR(players.user_ped(), PLAYER.GET_PLAYER_MAX_ARMOUR(players.user()))
             end)
 
             local dead = 0
-            local armor_after_death_toggle = self:toggle_loop(Translate("Auto Armour after Death"),{},"",function()
+            local armor_after_death_toggle = self:toggle_loop(Translate("Auto Armor after Death"),{},Translate("A body armor will be applied automatically when respawning."),function()
                 local health = ENTITY.GET_ENTITY_HEALTH(players.user_ped())
                 if health == 0 and dead == 0 then
                     dead = 1
@@ -426,6 +415,14 @@ util.keep_running()
                 util.yield(500)
             end)
 
+            table.insert(setup["script"], self:toggle(Translate("Always Clean"),{},Translate("Keep your ped dry and clean."),function(on)
+                util.yield()
+                on = GetOn(on)
+                Commands("lockwetness " .. on)
+                Commands("noblood " .. on)
+                Commands("wetness 0")
+            end))
+
     --===============--
     -- Online
     --===============--
@@ -434,12 +431,12 @@ util.keep_running()
 
             local session = online:list(Translate("Session"))
 
-            table.insert(setup["script"], session:toggle(Translate("Show OTR Players"),{},"",function(on)
+            table.insert(setup["script"], session:toggle(Translate("Show OTR Players"),{},Translate("Display on the radar invisible players."),function(on)
                 util.yield()
                 Commands("revealotr " .. GetOn(on))
             end, GetPathVal("Online>Reveal Off The Radar Players")))
 
-            table.insert(setup["script"], session:toggle(Translate("Spoof Session Informations"), {}, "", function(on)
+            table.insert(setup["script"], session:toggle(Translate("Spoof Session Informations"), {}, Translate("Spoof your session informations so nobody can join you from your R* profile."), function(on)
                 if on then
                     Commands("spoofsession storymode")
                     ClickPath("Online>Spoofing>Session Spoofing>Session Type>Invalid")
@@ -449,7 +446,7 @@ util.keep_running()
                 end
             end))
 
-            table.insert(setup["script"], session:toggle(Translate("Script Host Bruteforce"), {}, "", function(on)
+            table.insert(setup["script"], session:toggle(Translate("Script Host Bruteforce"), {}, Translate("Use all methods to become script host and remain so."), function(on)
                 Commands("klepto " .. GetOn(on))
                 while on do
                     if InSession() then
@@ -463,11 +460,11 @@ util.keep_running()
 
         -- features
 
-            local bounty_address = 1835502 + 4 + 1 + (players.user() * 3)
-            table.insert(setup["script"], online:toggle_loop(Translate("Auto Remove Bounty"), {}, "", function()
+            local bounty_address = 1835507 + (players.user() * 3)
+            table.insert(setup["script"], online:toggle_loop(Translate("Auto Remove Bounty"), {}, Translate("Automatically remove bounty on your head."), function()
                 if InSession() and memory.read_int(memory.script_global(bounty_address)) == 1 then
-                    memory.write_int(memory.script_global(2815059 + 1856 + 17), -1)
-                    memory.write_int(memory.script_global(2359296 + 1 + 5149 + 13), 2880000)
+                    memory.write_int(memory.script_global(2816932), -1)
+                    memory.write_int(memory.script_global(2364459), 2880000)
                     if notifications_enabled then
                         Notify(memory.read_int(memory.script_global(bounty_address + 1)))
                     end
@@ -475,10 +472,19 @@ util.keep_running()
                 util.yield(5000)
             end))
 
-            online:toggle_loop(Translate("Disable RP Gain"), {}, "", function()
-                memory.write_float(memory.script_global(262145 + 1), 0)
+            online:toggle_loop(Translate("Disable RP Gain"), {},Translate("You will not gain any RP."), function()
+                memory.write_float(memory.script_global(262146), 0)
             end, function()
-                memory.write_float(memory.script_global(262145 + 1), 1)
+                memory.write_float(memory.script_global(262146), 1)
+            end)
+
+            online:toggle_loop(Translate("Undead OTR"),{},Translate("Turn you off the radar without notifying other players."),function()
+                if ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()) ~= 0 then
+                    ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 0)
+                end
+                util.yield()
+            end, function()
+                ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 328)
             end)
 
     --===============--
@@ -524,7 +530,7 @@ util.keep_running()
 
             local radio = game:list(Translate("Radio"))
 
-            radio:toggle(Translate("Radio Everywhere"), {}, "", function(on)
+            radio:toggle(Translate("Radio Everywhere"), {}, Translate("You are able to listen to the radio everywhere."), function(on)
                 Commands("ipod " .. GetOn(on))
             end)
 
@@ -535,33 +541,33 @@ util.keep_running()
                 AUDIO.SET_RADIO_TO_STATION_NAME(station)
             end
 
-            radio:action("Sleepwalking - The Chain Gang Of 1974",{},"",function()
+            radio:action("Sleepwalking - The Chain Gang Of 1974",{},Translate("Click to play the song."),function()
                 SetRadio("RADIO_01_CLASS_ROCK", "END_CREDITS_KILL_MICHAEL")
             end)
 
-            radio:action("Don't Come Close - Yeasayer",{},"",function()
+            radio:action("Don't Come Close - Yeasayer",{},Translate("Click to play the song."),function()
                 SetRadio("RADIO_01_CLASS_ROCK", "END_CREDITS_KILL_TREVOR")
             end)
 
-            radio:action("The Set Up - Favored Nations",{},"",function()
+            radio:action("The Set Up - Favored Nations",{},Translate("Click to play the song."),function()
                 SetRadio("RADIO_01_CLASS_ROCK", "END_CREDITS_SAVE_MICHAEL_TREVOR")
             end)
 
         -- features
 
-            game:toggle_loop(Translate("Auto Skip Conversation"),{},"",function()
+            game:toggle_loop(Translate("Auto Skip Conversation"),{},Translate("Automatically skip all conversations."),function()
                 if AUDIO.IS_SCRIPTED_CONVERSATION_ONGOING() then
                     AUDIO.SKIP_TO_NEXT_SCRIPTED_CONVERSATION_LINE()
                 end
                 util.yield()
             end)
 
-            game:toggle_loop(Translate("Auto Skip Cutscene"),{},"",function()
+            game:toggle_loop(Translate("Auto Skip Cutscene"),{},Translate("Automatically skip all cutscenes."),function()
                 CUTSCENE.STOP_CUTSCENE_IMMEDIATELY()
                 util.yield(100)
             end)
 
-            game:toggle(Translate("Show FPS"),{},"",function(on)
+            game:toggle(Translate("Show FPS"),{},Translate("Display your FPS on screen."),function(on)
                 util.yield()
                 Commands("infotps " .. GetOn(on))
             end, GetPathVal("Game>Info Overlay>Ticks Per Second"))
@@ -603,18 +609,6 @@ util.keep_running()
                     "Online>Protections>Syncs>Invalid Model Sync",
                     "Online>Protections>Syncs>World Object Sync",
                     "Online>Protections>Syncs>Cage",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>ig_brad",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>cs_brad",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Franklin",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Michael",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Dépanneuse",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Killer Whale",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Dolphin",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Humpback",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Hammer Shark",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Tiger Shark",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Stingray",
-                    "Online>Protections>Syncs>Custom Model Sync Reactions>Fish",
                 },
 
                 additional = {
@@ -809,7 +803,7 @@ util.keep_running()
             stand:list_action(Translate("Setup"),{},"", setup_table, function(index)
                 Setup(setup_table[index])
                 if notifications_enabled then
-                    Notify(Translate("Setup") .." ".. setup_table[index])
+                    Notify(Translate("Setup") .. " " .. setup_table[index])
                 end
             end)
 
@@ -892,18 +886,18 @@ util.keep_running()
 
             local bounty = griefing:list(Translate("Bounty"), {}, "")
             local bounty_ammount = 10000
-            bounty:toggle_loop(Translate("Auto Bounty"),{},"", function()
+            bounty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop that place a bounty on the player."), function()
                 if InSession() then
                     Commands("bounty" .. player_name .. " " .. bounty_ammount)
                 end
                 util.yield(12000)
             end)
 
-            bounty:slider(Translate("Bounty Ammount"),{"mehbountyammount"},"",1,10000,10000,1000,function(ammount)
+            bounty:slider(Translate("Bounty Ammount"),{},Translate("Chose the ammount of the bounty offered automatically."),1,10000,10000,1000,function(ammount)
                 bounty_ammount = ammount
             end)
 
-            griefing:toggle(Translate("Ghost Mode"),{},"",function(on)
+            griefing:toggle(Translate("Ghost Mode"),{},Translate("The player can't shoot you anymore, same for you."),function(on)
                 NETWORK._SET_RELATIONSHIP_TO_PLAYER(pid, on)
             end)
 
