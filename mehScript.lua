@@ -1,4 +1,4 @@
-local version = "0.71"
+local version = "0.72"
 util.keep_running()
 
 --===============--
@@ -222,7 +222,6 @@ util.keep_running()
     local update_available
     async_http.init("raw.githubusercontent.com", "/akat0zi/mehScript/main/version", function(output)
         if tonumber(version) < tonumber(output) then
-            util.toast(version .. " and " .. output)
             update_available = true
             Notify(Translate("Version") .. " " .. string.gsub(output, "\n", "", 1) .. " " .. Translate("available.\nPress Update to get it."))
             update_button = menu.action(menu.my_root(), Translate("Update to") .. " ".. output, {}, "", function()
