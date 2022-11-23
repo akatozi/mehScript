@@ -1,4 +1,4 @@
-local version = "0.72"
+local version = 0.73
 util.keep_running()
 
 --===============--
@@ -40,6 +40,9 @@ util.keep_running()
     }
     NETWORK={
         ["_SET_RELATIONSHIP_TO_PLAYER"]=function(player,p1)native_invoker.begin_call()native_invoker.push_arg_int(player)native_invoker.push_arg_bool(p1)native_invoker.end_call_2(0xA7C511FA1C5BDA38)end,
+    }
+    PHYSICS={
+        ["_SET_LAUNCH_CONTROL_ENABLED"]=function(toggle)native_invoker.begin_call()native_invoker.push_arg_bool(toggle)native_invoker.end_call_2(0xAA6A6098851C396F)end,
     }
 
 --===============--
@@ -189,6 +192,9 @@ util.keep_running()
             ["Automatically skip all cutscenes."] = "Passe automatiquement les cinématiques.",
             ["Display your FPS on screen."] = "Affiches les IPS sur l'écran.",
             ["The player can't shoot you anymore, same for you."] = "Le joueur ne peut plus te tirer dessus, pareil pour toi.",
+            ["Vehicle"] = "Véhicule",
+            ["Launch Control"] = "Départ Controllé",
+            ["Prevents the car from burning when starting to drive away faster."] = "Empêche la voiture de patiner au démarrage pour aller plus vite."
         }
     }
 
@@ -210,6 +216,7 @@ util.keep_running()
 
     local main = menu.my_root()
     local self = main:list(Translate("Self"))
+    local vehicle = main:list(Translate("Vehicle"))
     local online = main:list(Translate("Online"))
     local game = main:list(Translate("Game"))
     local stand = main:list("Stand")
@@ -356,7 +363,7 @@ util.keep_running()
 
             local modified_weapon_recoil = {}
             table.insert(setup["script"], weaponm:toggle_loop(Translate("No Recoil"),{},Translate("Weapons will no longer have recoil."),function()
-                if not util.is_session_transition_active() then
+                if not util.is_session_transition_active() and players.get_vehicle_model(players.user()) == 0 then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x2F4) == 0 then return end
                     if modified_weapon_recoil[weapon] == nil then
@@ -374,7 +381,7 @@ util.keep_running()
             local modified_weapon_spread_1 = {}
             local modified_weapon_spread_2 = {}
             table.insert(setup["script"], weaponm:toggle_loop(Translate("No Spread"),{},Translate("Weapons will no longer have bullet spread."),function()
-                if not util.is_session_transition_active() then
+                if not util.is_session_transition_active() and players.get_vehicle_model(players.user()) == 0 then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x74) == 0 and memory.read_float(weapon + 0x124) == 0 then return end
                     if modified_weapon_spread_1[weapon] == nil then
@@ -424,6 +431,14 @@ util.keep_running()
             end))
 
     --===============--
+    -- Vehicle
+    --===============--
+
+            vehicle:toggle(Translate("Launch Control"),{},Translate("Prevents the car from burning when starting to drive away faster."),function(on)
+                PHYSICS._SET_LAUNCH_CONTROL_ENABLED(on)
+            end)
+    
+    --===============--
     -- Online
     --===============--
 
@@ -460,13 +475,13 @@ util.keep_running()
 
         -- features
 
-            local bounty_address = 1835507 + (players.user() * 3)
             table.insert(setup["script"], online:toggle_loop(Translate("Auto Remove Bounty"), {}, Translate("Automatically remove bounty on your head."), function()
+                local bounty_address = 1835507 + (players.user() * 3)
                 if InSession() and memory.read_int(memory.script_global(bounty_address)) == 1 then
                     memory.write_int(memory.script_global(2816932), -1)
                     memory.write_int(memory.script_global(2364459), 2880000)
                     if notifications_enabled then
-                        Notify(memory.read_int(memory.script_global(bounty_address + 1)))
+                        Notify(Translate("Bounty Removed: ") .. memory.read_int(memory.script_global(bounty_address + 1)))
                     end
                 end
                 util.yield(5000)
@@ -876,6 +891,7 @@ util.keep_running()
     end
 
     PlayerMenu = function(pid)
+        if pid == players.user() then return end
         local player = menu.player_root(pid)
         local player_name = players.get_name(pid)
         player:divider("mehScript")
@@ -926,9 +942,9 @@ util.keep_running()
 
             attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him"),function()
                 Notify(Translate("Nuke attempt on ") .. player_name)
-                StartAttack("crash",pid)
-                util.yield(5000)
                 StartAttack("kick",pid)
+                util.yield(5000)
+                StartAttack("crash",pid)
             end)
 
             player:toggle(Translate("Spectate"),{},"",function(on)
