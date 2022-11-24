@@ -1,4 +1,4 @@
-local version = 0.73
+local version = 0.74
 util.keep_running()
 
 --===============--
@@ -168,8 +168,8 @@ util.keep_running()
             ["Enable all protections."] = "Active toutes les protections.",
             ["Ghost Mode"] = "Mode Fantôme",
             ["Bounty"] = "Prime",
-            ["Bounty Ammount"] = "Somme Prime",
-            ["Chose the ammount of the bounty offered automatically."] = "Choisit la valeur de la prime placée en boucle.",
+            ["Bounty Amount"] = "Somme Prime",
+            ["Chose the amount of the bounty offered automatically."] = "Choisit la valeur de la prime placée en boucle.",
             ["Auto Bounty"] = "Prime Auto.",
             ["Loop that place a bounty on the player."] = "Place une prime en boucle sur le joueur.",
             ["Bounty Removed: "] = "Prime Retirée: ",
@@ -194,7 +194,9 @@ util.keep_running()
             ["The player can't shoot you anymore, same for you."] = "Le joueur ne peut plus te tirer dessus, pareil pour toi.",
             ["Vehicle"] = "Véhicule",
             ["Launch Control"] = "Départ Controllé",
-            ["Prevents the car from burning when starting to drive away faster."] = "Empêche la voiture de patiner au démarrage pour aller plus vite."
+            ["Prevents the car from burning when starting to drive away faster."] = "Empêche la voiture de patiner au démarrage pour aller plus vite.",
+            ["Stop Spectating"] = "Arrêter d'Observer",
+            ["If you are spectating a player, it will stop to spectate him."] = "Si vous observez un joueur, cela va arrêter de l'observer.",
         }
     }
 
@@ -500,6 +502,12 @@ util.keep_running()
                 util.yield()
             end, function()
                 ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 328)
+            end)
+
+            online:action(Translate("Stop Spectating"),{},Translate("If you are spectating a player, it will stop to spectate him."),function()
+                if #player_spectate ~= 0 then
+                    Commands("mehspectate" .. player_spectate[1] .. " off")
+                end
             end)
 
     --===============--
@@ -882,6 +890,8 @@ util.keep_running()
 
     }
 
+    player_spectate = {}
+
     StartAttack = function(list, pid)
         for _, cmd in pairs(attack[list]) do
             if players.exists(pid) then
@@ -901,16 +911,16 @@ util.keep_running()
             local griefing = player:list(Translate("Griefing"),{},"")
 
             local bounty = griefing:list(Translate("Bounty"), {}, "")
-            local bounty_ammount = 10000
+            local bounty_amount = 10000
             bounty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop that place a bounty on the player."), function()
                 if InSession() then
-                    Commands("bounty" .. player_name .. " " .. bounty_ammount)
+                    Commands("bounty" .. player_name .. " " .. bounty_amount)
                 end
                 util.yield(12000)
             end)
 
-            bounty:slider(Translate("Bounty Ammount"),{},Translate("Chose the ammount of the bounty offered automatically."),1,10000,10000,1000,function(ammount)
-                bounty_ammount = ammount
+            bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+                bounty_amount = amount
             end)
 
             griefing:toggle(Translate("Ghost Mode"),{},Translate("The player can't shoot you anymore, same for you."),function(on)
@@ -918,12 +928,16 @@ util.keep_running()
             end)
 
             griefing:toggle_loop(Translate("Freeze"),{}, Translate("Better than the Stand one."),function()
-                util.trigger_script_event(1 << pid, {0x4868BC31, pid, 0, 0, 0, 0, 0}) -- credits to jinx
-                TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
-                Commands("freeze" .. player_name .. " on")
+                if players.exists() then
+                    util.trigger_script_event(1 << pid, {0x4868BC31, pid, 0, 0, 0, 0, 0}) -- credits to jinx
+                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+                    Commands("freeze" .. player_name .. " on")
+                end
                 util.yield()
             end, function()
-                Commands("freeze" .. player_name .. " off")
+                if players.exists() then
+                    Commands("freeze" .. player_name .. " off")
+                end
             end)
 
         -- attack
@@ -947,9 +961,19 @@ util.keep_running()
                 StartAttack("crash",pid)
             end)
 
-            player:toggle(Translate("Spectate"),{},"",function(on)
-                if players.exists(pid) then
-                    Commands("spectate" .. player_name .. " " .. GetOn(on))
+            player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
+                util.yield()
+                if on then
+                    if #player_spectate ~= 0 then
+                        Commands("mehspectate" .. player_spectate[1] .. " off")
+                    end
+                    table.insert(player_spectate, player_name)
+                    Commands("spectate" .. player_name .. " on")
+                else
+                    if players.exists(pid) then
+                        Commands("spectate" .. player_spectate[1] .. " off")
+                    end
+                    table.remove(player_spectate, 1)
                 end
             end)
     end
