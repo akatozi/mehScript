@@ -928,14 +928,14 @@ util.keep_running()
             end)
 
             griefing:toggle_loop(Translate("Freeze"),{}, Translate("Better than the Stand one."),function()
-                if players.exists() then
+                if players.exists(pid) then
                     util.trigger_script_event(1 << pid, {0x4868BC31, pid, 0, 0, 0, 0, 0}) -- credits to jinx
                     TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
                     Commands("freeze" .. player_name .. " on")
                 end
                 util.yield()
             end, function()
-                if players.exists() then
+                if players.exists(pid) then
                     Commands("freeze" .. player_name .. " off")
                 end
             end)
