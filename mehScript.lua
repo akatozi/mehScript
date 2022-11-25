@@ -1,4 +1,4 @@
-local version = 0.74
+local version = 0.76
 util.keep_running()
 
 --===============--
@@ -19,9 +19,15 @@ util.keep_running()
         ["SET_ENTITY_HEALTH"]=function(entity,health,p2)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.push_arg_int(health)native_invoker.push_arg_int(p2)native_invoker.end_call_2(0x6B76DC1F3AE6E6A3)end,
         ["GET_ENTITY_MAX_HEALTH"]=function(entity)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.end_call_2(0x15D757606D170C3C)return native_invoker.get_return_value_int()end,
     	["SET_ENTITY_MAX_HEALTH"]=function(entity,value)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.push_arg_int(value)native_invoker.end_call_2(0x166E7CF68597D8B5)end,
+        ["GET_ENTITY_VELOCITY"]=function(entity)native_invoker.begin_call();native_invoker.push_arg_int(entity);native_invoker.end_call("4805D2B1D8CF94A9");return native_invoker.get_return_value_vector3();end,
+        ["IS_ENTITY_IN_AIR"]=function(entity)native_invoker.begin_call();native_invoker.push_arg_int(entity);native_invoker.end_call("886E37EC497200B6");return native_invoker.get_return_value_bool();end,
+        ["APPLY_FORCE_TO_ENTITY"]=function(entity,forceFlags,x,y,z,offX,offY,offZ,boneIndex,isDirectionRel,ignoreUpVec,isForceRel,p12,p13)native_invoker.begin_call();native_invoker.push_arg_int(entity);native_invoker.push_arg_int(forceFlags);native_invoker.push_arg_float(x);native_invoker.push_arg_float(y);native_invoker.push_arg_float(z);native_invoker.push_arg_float(offX);native_invoker.push_arg_float(offY);native_invoker.push_arg_float(offZ);native_invoker.push_arg_int(boneIndex);native_invoker.push_arg_bool(isDirectionRel);native_invoker.push_arg_bool(ignoreUpVec);native_invoker.push_arg_bool(isForceRel);native_invoker.push_arg_bool(p12);native_invoker.push_arg_bool(p13);native_invoker.end_call("C5F68BE9613E2D18");end,
+        ["IS_ENTITY_A_VEHICLE"]=function(entity)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.end_call_2(0x6AC7003FA6E5575E)return native_invoker.get_return_value_bool()end,
+        ["_GET_ENTITY_PHYSICS_HEADING"]=function(entity)native_invoker.begin_call()native_invoker.push_arg_int(entity)native_invoker.end_call_2(0x846BF6291198A71E)return native_invoker.get_return_value_float()end,
     }
     PED={
         ["SET_PED_ARMOUR"]=function(ped,amount)native_invoker.begin_call()native_invoker.push_arg_int(ped)native_invoker.push_arg_int(amount)native_invoker.end_call_2(0xCEA04D83135264CC)end,
+        ["GET_VEHICLE_PED_IS_IN"]=function(ped,includeLastVehicle)native_invoker.begin_call()native_invoker.push_arg_int(ped)native_invoker.push_arg_bool(includeLastVehicle)native_invoker.end_call_2(0x9A9112A0FE9A4713)return native_invoker.get_return_value_int()end,
     }
     TASK={
         ["CLEAR_PED_TASKS_IMMEDIATELY"]=function(ped)native_invoker.begin_call()native_invoker.push_arg_int(ped)native_invoker.end_call_2(0xAAA34F8A7CB32098)end,
@@ -37,12 +43,20 @@ util.keep_running()
     }
     PAD={
         ["IS_CONTROL_JUST_PRESSED"]=function(padIndex,control)native_invoker.begin_call()native_invoker.push_arg_int(padIndex)native_invoker.push_arg_int(control)native_invoker.end_call_2(0x580417101DDB492F)return native_invoker.get_return_value_bool()end,
+        ["GET_CONTROL_NORMAL"]=function(padIndex,control)native_invoker.begin_call();native_invoker.push_arg_int(padIndex);native_invoker.push_arg_int(control);native_invoker.end_call("EC3C9B8D5327B563");return native_invoker.get_return_value_float();end,
+        ["IS_CONTROL_PRESSED"]=function(padIndex,control)native_invoker.begin_call();native_invoker.push_arg_int(padIndex);native_invoker.push_arg_int(control);native_invoker.end_call("F3A21BCD95725A4A");return native_invoker.get_return_value_bool();end,
     }
     NETWORK={
         ["_SET_RELATIONSHIP_TO_PLAYER"]=function(player,p1)native_invoker.begin_call()native_invoker.push_arg_int(player)native_invoker.push_arg_bool(p1)native_invoker.end_call_2(0xA7C511FA1C5BDA38)end,
     }
     PHYSICS={
         ["_SET_LAUNCH_CONTROL_ENABLED"]=function(toggle)native_invoker.begin_call()native_invoker.push_arg_bool(toggle)native_invoker.end_call_2(0xAA6A6098851C396F)end,
+    }
+    VEHICLE = {
+        ["IS_VEHICLE_ON_ALL_WHEELS"]=function(vec)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.end_call("B104CD1BABF302E2");return native_invoker.get_return_value_bool();end,
+        ["SET_VEHICLE_REDUCE_GRIP"]=function(vec,toggle)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.push_arg_bool(toggle);native_invoker.end_call("222FF6A823D122E2");end,
+        ["SET_VEHICLE_STEER_BIAS"]=function(vec,value)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.push_arg_float(value);native_invoker.end_call("42A8EC77D5150CBE");end,
+        ["SET_VEHICLE_INDICATOR_LIGHTS"]=function(vec,turnSignal,toggle)native_invoker.begin_call()native_invoker.push_arg_int(vec)native_invoker.push_arg_int(turnSignal)native_invoker.push_arg_bool(toggle)native_invoker.end_call_2(0xB5D45264751B7DF0)end,
     }
 
 --===============--
@@ -52,6 +66,8 @@ util.keep_running()
     local Commands = menu.trigger_commands
     local GetOn = function(on) if on then return "on" else return "off" end end
     local InSession = function() return util.is_session_started() and not util.is_session_transition_active() end
+    local InVehicle = function() return players.get_vehicle_model(players.user()) ~= 0 end
+    local GetVehicle = function() if InVehicle() then return PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), false) else return 0 end end
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(path)) end
     local SetPathVal = function(path, state) menu.set_value(menu.ref_by_path(path), state) end
     local ClickPath = function(path) menu.trigger_command(menu.ref_by_path(path)) end
@@ -193,10 +209,20 @@ util.keep_running()
             ["Display your FPS on screen."] = "Affiches les IPS sur l'écran.",
             ["The player can't shoot you anymore, same for you."] = "Le joueur ne peut plus te tirer dessus, pareil pour toi.",
             ["Vehicle"] = "Véhicule",
-            ["Launch Control"] = "Départ Controllé",
+            ["Launch Control"] = "Départ Contrôler",
             ["Prevents the car from burning when starting to drive away faster."] = "Empêche la voiture de patiner au démarrage pour aller plus vite.",
             ["Stop Spectating"] = "Arrêter d'Observer",
             ["If you are spectating a player, it will stop to spectate him."] = "Si vous observez un joueur, cela va arrêter de l'observer.",
+            ["Drift"] = "Drift",
+            ["Press SHIFT to drift."] = "Appuis sur MAJ pour drifter.",
+            ["Counter Steering Assist"] = "Assistance Contre-Braquage",
+            ["Helps you so you don't do 360."] = "Empêche de faire des 360.",
+            ["Counter Steering Angle"] = "Angle Contre-Braquage",
+            ["Your drift angle can't be higher than this value."] = "L'angle de drift ne peut pas être plus grand que cette valeur.",
+            ["Light Indicators"] = "Clignotants",
+            ["Left Light Indicator"] = "Clignotant Gauche",
+            ["Right Light Indicator"] = "Clignotant Droit",
+            ["Warning Light Indicator"] = "Feux de Détresse",
         }
     }
 
@@ -247,6 +273,9 @@ util.keep_running()
                 async_http.dispatch()
             end)
             menu.attach_before(self, menu.detach(update_button))
+        elseif tonumber(version) > tonumber(output) then
+            dev_build = main:divider("Dev Build",{},"",function() end)
+            menu.attach_before(self, menu.detach(dev_build))
         end
     end)
     async_http.dispatch()
@@ -365,7 +394,8 @@ util.keep_running()
 
             local modified_weapon_recoil = {}
             table.insert(setup["script"], weaponm:toggle_loop(Translate("No Recoil"),{},Translate("Weapons will no longer have recoil."),function()
-                if not util.is_session_transition_active() and players.get_vehicle_model(players.user()) == 0 then
+                util.yield(10)
+                if not util.is_session_transition_active() and not InVehicle() then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x2F4) == 0 then return end
                     if modified_weapon_recoil[weapon] == nil then
@@ -383,7 +413,7 @@ util.keep_running()
             local modified_weapon_spread_1 = {}
             local modified_weapon_spread_2 = {}
             table.insert(setup["script"], weaponm:toggle_loop(Translate("No Spread"),{},Translate("Weapons will no longer have bullet spread."),function()
-                if not util.is_session_transition_active() and players.get_vehicle_model(players.user()) == 0 then
+                if not util.is_session_transition_active() and not InVehicle() then
                     local weapon = GetGunPtr()
                     if memory.read_float(weapon + 0x74) == 0 and memory.read_float(weapon + 0x124) == 0 then return end
                     if modified_weapon_spread_1[weapon] == nil then
@@ -435,6 +465,123 @@ util.keep_running()
     --===============--
     -- Vehicle
     --===============--
+
+        util.create_tick_handler(function()
+            vec = GetVehicle()
+        end)
+
+        -- drift
+
+            local drift = vehicle:list(Translate("Drift"),{},"")
+
+            get_heading = function(vec)
+                local v = ENTITY.GET_ENTITY_VELOCITY(vec)
+                return math.fmod(270 + math.deg(math.atan(v.y, v.x)), 360)
+            end
+
+            local get_angle = function(vec)
+                local angle = 360 - math.fmod(ENTITY._GET_ENTITY_PHYSICS_HEADING(vec) - get_heading(vec) + 360, 360)
+                if angle > 180 then
+                    angle = 0 - (360 - angle)
+                end
+                return math.floor(angle+0.5)
+            end
+
+            local drift_assist = true
+            local drift_assist_value = 50
+
+            -- inpired by 2t1 drift script
+            drift:toggle_loop(Translate("Drift"),{},Translate("Press SHIFT to drift."),function()
+                if vec then
+                    if PAD.IS_CONTROL_PRESSED(21, 21) then
+                        if (VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vec) and not ENTITY.IS_ENTITY_IN_AIR(vec)) then
+                            ENTITY.APPLY_FORCE_TO_ENTITY(vec, 1, 0, 0, -0.3 * PAD.GET_CONTROL_NORMAL(2, 72), 0, 0, 0, true, true)
+                        end
+                        local drift_angle = get_angle(vec)
+                        VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec, true)
+                        if drift_assist and math.abs(drift_angle) > drift_assist_value then
+                            VEHICLE.SET_VEHICLE_STEER_BIAS(vec, math.rad(drift_angle * 0.69))
+                            VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec, false)
+                        end
+                    else
+                        VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec, false)
+                    end
+                end
+            end, function()
+                if vec then
+                    VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec, false)
+                end
+            end)
+
+            drift:toggle(Translate("Counter Steering Assist"),{},Translate("Helps you so you don't do 360."),function(on)
+                drift_assist = on
+            end, drift_assist)
+
+            drift:slider(Translate("Counter Steering Angle"),{"mehdriftassist"},Translate("Your drift angle can't be higher than this value."),30,90,drift_assist_value,1,function(val)
+                drift_assist_value = val
+            end)
+
+        -- light indicators
+
+            local light_indicators = vehicle:list(Translate("Light Indicators"))
+
+            right_light_indicator = light_indicators:toggle_loop(Translate("Right Light Indicator"),{},"",function()
+                if menu.get_state(left_light_indicator) == "On" then
+                    menu.trigger_command(left_light_indicator, "Off")
+                end
+                if menu.get_state(warning_light_indicator) == "On" then
+                    menu.trigger_command(warning_light_indicator, "Off")
+                end
+                if not InVehicle() then
+                    menu.trigger_command(right_light_indicator, "Off")
+                else
+                    util.yield(50)
+                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, true)
+                end
+            end, function()
+                util.yield(50)
+                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, false)
+            end)
+
+            left_light_indicator = light_indicators:toggle_loop(Translate("Left Light Indicator"),{},"",function()
+                if menu.get_state(right_light_indicator) == "On" then
+                    menu.trigger_command(right_light_indicator, "Off")
+                end
+                if menu.get_state(warning_light_indicator) == "On" then
+                    menu.trigger_command(warning_light_indicator, "Off")
+                end
+                if not InVehicle() then
+                    menu.trigger_command(left_light_indicator, "Off")
+                else
+                    util.yield(50)
+                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, true)
+                end
+            end, function()
+                util.yield(50)
+                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, false)
+            end)
+
+            warning_light_indicator = light_indicators:toggle_loop(Translate("Warning Light Indicator"),{},"",function()
+                if menu.get_state(right_light_indicator) == "On" then
+                    menu.trigger_command(right_light_indicator, "Off")
+                end
+                if menu.get_state(left_light_indicator) == "On" then
+                    menu.trigger_command(left_light_indicator, "Off")
+                end
+                if not InVehicle() then
+                    menu.trigger_command(warning_light_indicator, "Off")
+                else
+                    util.yield(50)
+                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, true)
+                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, true)
+                end
+            end, function()
+                util.yield(50)
+                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, false)
+                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, false)
+            end)
+
+        -- features
 
             vehicle:toggle(Translate("Launch Control"),{},Translate("Prevents the car from burning when starting to drive away faster."),function(on)
                 PHYSICS._SET_LAUNCH_CONTROL_ENABLED(on)
@@ -862,7 +1009,6 @@ util.keep_running()
                 local credits = misc:list(Translate("Credits"))
                 local credits_action = function(name, detail) credits:action(name, {}, detail, function() end) end
                 credits_action("Akatozi", "My goal with this script is to have useful features at hand, because I'm still a beginner I used parts of code from other devs more competent than me for some features. I'm not trying to do a 'big' script as LanceScript Reloaded or WiriScript but I want a script that has all the features I need / I use often.")
-                credits:divider("Awesome Devs")
                 credits_action("lance", "Creator of LanceScript\nSynthwave rendering and inspired for no recoil / spread.")
 
             -- links
