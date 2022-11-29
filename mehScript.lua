@@ -1,4 +1,4 @@
-local version = 0.76
+local version = 0.77
 util.keep_running()
 
 --===============--
@@ -56,7 +56,6 @@ util.keep_running()
         ["IS_VEHICLE_ON_ALL_WHEELS"]=function(vec)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.end_call("B104CD1BABF302E2");return native_invoker.get_return_value_bool();end,
         ["SET_VEHICLE_REDUCE_GRIP"]=function(vec,toggle)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.push_arg_bool(toggle);native_invoker.end_call("222FF6A823D122E2");end,
         ["SET_VEHICLE_STEER_BIAS"]=function(vec,value)native_invoker.begin_call();native_invoker.push_arg_int(vec);native_invoker.push_arg_float(value);native_invoker.end_call("42A8EC77D5150CBE");end,
-        ["SET_VEHICLE_INDICATOR_LIGHTS"]=function(vec,turnSignal,toggle)native_invoker.begin_call()native_invoker.push_arg_int(vec)native_invoker.push_arg_int(turnSignal)native_invoker.push_arg_bool(toggle)native_invoker.end_call_2(0xB5D45264751B7DF0)end,
     }
 
 --===============--
@@ -111,6 +110,7 @@ util.keep_running()
             ["Freeze"] = "Figer",
             ["Attack"] = "Attaquer",
             ["Kick"] = "Ejecter",
+            ["Kick Player"] = "Ejecter le Joueur",
             ["Attempt to Kick "] = "Essai d'éjecter ",
             ["Crash"] = "Crash",
             ["Attempt to Crash "] = "Essai de crash ",
@@ -162,9 +162,8 @@ util.keep_running()
             ["Log"] = "Log",
             ["Help Message"] = "Message D'aide",
             ["Notifications Mode"] = "Mode de Notifications",
-            ["Use all kick methods"] = "Utilise toutes les méthodes de kick",
-            ["Use all crash methods"] = "Utilise toutes les méthodes de crash",
-            ["Take all risks to remove him"] = "Prend tous les risques pour l'éjecter",
+            ["Use all crash methods."] = "Utilise toutes les méthodes de crash.",
+            ["Take all risks to remove him.\nNote: You may be karma."] = "Prend tous les risques pour l'éjecter.\nNote: Tu pourrai être karma.",
             ["Default"] = "Par défaut",
             ["Show FPS"] = "Afficher IPS",
             ["Session"] = "Session",
@@ -189,7 +188,7 @@ util.keep_running()
             ["Auto Bounty"] = "Prime Auto.",
             ["Loop that place a bounty on the player."] = "Place une prime en boucle sur le joueur.",
             ["Bounty Removed: "] = "Prime Retirée: ",
-            ["Undead OTR"] = "Invisible Radar de Mort",
+            ["Undead OTR"] = "Invisible Mort-Vivant",
             ["Infinite ammo in magazine with insane shooting speed."] = "Munitions infini dans le chargeur et cadence de tir incroyable.",
             ["Weapons will no longer have recoil."] = "Les armes n'auront plus de recul.",
             ["Weapons will no longer have bullet spread."] = "Les armes n'auront plus de dispertion de balles.",
@@ -201,7 +200,7 @@ util.keep_running()
             ["Use all methods to become script host and remain so."] = "Utilise toutes les méthodes pour devenir hôte de script et le rester.",
             ["Automatically remove bounty on your head."] = "Retire automatiquement les primes sur ta tête.",
             ["You will not gain any RP."] = "Tu ne gagneras plus de RP.",
-            ["Turn you off the radar without notifying other players."] = "Devient invisible sur le radar sans avertir les autres joueurs.",
+            ["Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."] = "Devient invisible sur le radar sans avertir les autres joueurs.\nNote: Déclenche la détection de Vie Modder.",
             ["You are able to listen to the radio everywhere."] = "Tu es capable d'écouter la radio partout.",
             ["Click to play the song."] = "Clique pour jouer la musique.",
             ["Automatically skip all conversations."] = "Passe automatiquement les dialogues.",
@@ -219,10 +218,11 @@ util.keep_running()
             ["Helps you so you don't do 360."] = "Empêche de faire des 360.",
             ["Counter Steering Angle"] = "Angle Contre-Braquage",
             ["Your drift angle can't be higher than this value."] = "L'angle de drift ne peut pas être plus grand que cette valeur.",
-            ["Light Indicators"] = "Clignotants",
-            ["Left Light Indicator"] = "Clignotant Gauche",
-            ["Right Light Indicator"] = "Clignotant Droit",
-            ["Warning Light Indicator"] = "Feux de Détresse",
+            [" organisation."] = "organisation.",
+            ["Kick Organisation"] = "Ejecter l'Organisation",
+            ["Kick all organisation members."] = "Ejecte tous les membres de l'organisation.",
+            ["Will send a private chat message to the player when kicking him."] = "Envoi un message privé au joueur en l'éjectant.",
+            ["Kick Message"] = "Message d'Ejection",
         }
     }
 
@@ -261,10 +261,10 @@ util.keep_running()
             Notify(Translate("Version") .. " " .. string.gsub(output, "\n", "", 1) .. " " .. Translate("available.\nPress Update to get it."))
             update_button = menu.action(menu.my_root(), Translate("Update to") .. " ".. output, {}, "", function()
                 async_http.init('raw.githubusercontent.com','/akat0zi/mehScript/main/mehScript.lua',function(a)
-                    local err = select(2,load(a))
-                    if err then
+                    if select(2,load(a)) then
                         Notify(Translate("Script failed to download. Please try again later. If this continues to happen then manually update via github."))
-                    return end
+                        return
+                    end
                     local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
                     f:write(a)
                     f:close()
@@ -521,66 +521,6 @@ util.keep_running()
                 drift_assist_value = val
             end)
 
-        -- light indicators
-
-            local light_indicators = vehicle:list(Translate("Light Indicators"))
-
-            right_light_indicator = light_indicators:toggle_loop(Translate("Right Light Indicator"),{},"",function()
-                if menu.get_state(left_light_indicator) == "On" then
-                    menu.trigger_command(left_light_indicator, "Off")
-                end
-                if menu.get_state(warning_light_indicator) == "On" then
-                    menu.trigger_command(warning_light_indicator, "Off")
-                end
-                if not InVehicle() then
-                    menu.trigger_command(right_light_indicator, "Off")
-                else
-                    util.yield(50)
-                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, true)
-                end
-            end, function()
-                util.yield(50)
-                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, false)
-            end)
-
-            left_light_indicator = light_indicators:toggle_loop(Translate("Left Light Indicator"),{},"",function()
-                if menu.get_state(right_light_indicator) == "On" then
-                    menu.trigger_command(right_light_indicator, "Off")
-                end
-                if menu.get_state(warning_light_indicator) == "On" then
-                    menu.trigger_command(warning_light_indicator, "Off")
-                end
-                if not InVehicle() then
-                    menu.trigger_command(left_light_indicator, "Off")
-                else
-                    util.yield(50)
-                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, true)
-                end
-            end, function()
-                util.yield(50)
-                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, false)
-            end)
-
-            warning_light_indicator = light_indicators:toggle_loop(Translate("Warning Light Indicator"),{},"",function()
-                if menu.get_state(right_light_indicator) == "On" then
-                    menu.trigger_command(right_light_indicator, "Off")
-                end
-                if menu.get_state(left_light_indicator) == "On" then
-                    menu.trigger_command(left_light_indicator, "Off")
-                end
-                if not InVehicle() then
-                    menu.trigger_command(warning_light_indicator, "Off")
-                else
-                    util.yield(50)
-                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, true)
-                    VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, true)
-                end
-            end, function()
-                util.yield(50)
-                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 0, false)
-                VEHICLE.SET_VEHICLE_INDICATOR_LIGHTS(vec, 1, false)
-            end)
-
         -- features
 
             vehicle:toggle(Translate("Launch Control"),{},Translate("Prevents the car from burning when starting to drive away faster."),function(on)
@@ -610,9 +550,9 @@ util.keep_running()
                 end
             end))
 
-            table.insert(setup["script"], session:toggle(Translate("Script Host Bruteforce"), {}, Translate("Use all methods to become script host and remain so."), function(on)
+            script_host_bruteforce = session:toggle(Translate("Script Host Bruteforce"), {}, Translate("Use all methods to become script host and remain so."), function(on)
                 Commands("klepto " .. GetOn(on))
-                while on do
+                while menu.get_state(script_host_bruteforce) == "On" do
                     if InSession() then
                         if players.get_script_host() ~= players.user() then
                             Commands("givesh" .. players.get_name(players.user()))
@@ -620,12 +560,14 @@ util.keep_running()
                     end
                     util.yield(1000)
                 end
-            end))
+            end)
+
+            table.insert(setup["script"], script_host_bruteforce)
 
         -- features
 
             table.insert(setup["script"], online:toggle_loop(Translate("Auto Remove Bounty"), {}, Translate("Automatically remove bounty on your head."), function()
-                local bounty_address = 1835507 + (players.user() * 3)
+                local bounty_address = 1835507 + players.user() * 3
                 if InSession() and memory.read_int(memory.script_global(bounty_address)) == 1 then
                     memory.write_int(memory.script_global(2816932), -1)
                     memory.write_int(memory.script_global(2364459), 2880000)
@@ -642,13 +584,19 @@ util.keep_running()
                 memory.write_float(memory.script_global(262146), 1)
             end)
 
-            online:toggle_loop(Translate("Undead OTR"),{},Translate("Turn you off the radar without notifying other players."),function()
-                if ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()) ~= 0 then
-                    ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 0)
+            local max_health
+            undead_otr = online:toggle(Translate("Undead OTR"),{},Translate("Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."),function(on)
+                if on then
+                    max_health = ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped())
+                    while menu.get_state(undead_otr) == "On" do
+                        if ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()) ~= 0 then
+                            ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 0)
+                        end
+                        util.yield()
+                    end
+                else
+                    ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), max_health)
                 end
-                util.yield()
-            end, function()
-                ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(), 328)
             end)
 
             online:action(Translate("Stop Spectating"),{},Translate("If you are spectating a player, it will stop to spectate him."),function()
@@ -752,11 +700,12 @@ util.keep_running()
                 regular = {
                     "Online>Protections>Events>Crash Event",
                     "Online>Protections>Events>Kick Event",
-                    "Online>Protections>Events>Modded Event",
-                    "Online>Protections>Events>CEO/MC Ban",
-                    "Online>Protections>Events>CEO/MC Ban (Not My CEO)",
-                    "Online>Protections>Events>CEO/MC Kick",
-                    "Online>Protections>Events>CEO/MC Kick (Not My Boss)",
+                },
+
+                ultimate = {
+                    "Online>Protections>Syncs>Invalid Model Sync",
+                    "Online>Protections>Syncs>World Object Sync",
+                    "Online>Protections>Syncs>Cage",
                     "Online>Protections>Events>Start Freemode Mission",
                     "Online>Protections>Events>Start Freemode Mission (Not My Boss)",
                     "Online>Protections>Events>Teleport To Interior",
@@ -773,12 +722,11 @@ util.keep_running()
                     "Online>Protections>Events>Disable Driving Vehicles",
                     "Online>Protections>Events>Kick From Vehicle",
                     "Online>Protections>Events>Force Camera Forward",
-                },
-
-                ultimate = {
-                    "Online>Protections>Syncs>Invalid Model Sync",
-                    "Online>Protections>Syncs>World Object Sync",
-                    "Online>Protections>Syncs>Cage",
+                    "Online>Protections>Events>Modded Event",
+                    "Online>Protections>Events>CEO/MC Ban",
+                    "Online>Protections>Events>CEO/MC Ban (Not My CEO)",
+                    "Online>Protections>Events>CEO/MC Kick",
+                    "Online>Protections>Events>CEO/MC Kick (Not My Boss)",
                 },
 
                 additional = {
@@ -847,6 +795,18 @@ util.keep_running()
                         SetPathVal(path..">Notification", 0)
                     end
                 end
+                local special_on = 0
+                if mode == "ultimate" then
+                    special_on = 3
+                end
+                SetProtectionsToggleSpecial(special_on)
+            end
+
+            SetProtectionsToggleSpecial = function(on)
+                local block_on = 0
+                if on == 3 then
+                    block_on = 2
+                end
                 for _, path in pairs(protection["special"]) do
                     SetPathVal(path..">Block", block_on)
                     if protections_log and on ~= 0 then
@@ -870,9 +830,7 @@ util.keep_running()
                 local notification_on = protections_notification
                 if state then
                     SetProtectionsToggle(3, mode)
-                    if mode == "regular" or mode == "ultimate" then
-                        add_state = true
-                    end
+                    add_state = true
                 else
                     log_on = false
                     notification_on = false
@@ -1028,26 +986,21 @@ util.keep_running()
             "flashcrash",
             "ngcrash",
             "footlettuce",
-        },
-
-        kick = {
-            "kick",
-        },
-
+        }
     }
 
     player_spectate = {}
 
-    StartAttack = function(list, pid)
-        for _, cmd in pairs(attack[list]) do
+    Crash = function(pid)
+        for _, cmd in pairs(attack["crash"]) do
             if players.exists(pid) then
                 Commands(cmd .. players.get_name(pid))
             end
+            util.yield(100)
         end
     end
 
     PlayerMenu = function(pid)
-        if pid == players.user() then return end
         local player = menu.player_root(pid)
         local player_name = players.get_name(pid)
         player:divider("mehScript")
@@ -1060,9 +1013,11 @@ util.keep_running()
             local bounty_amount = 10000
             bounty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop that place a bounty on the player."), function()
                 if InSession() then
-                    Commands("bounty" .. player_name .. " " .. bounty_amount)
+                    if memory.read_int(memory.script_global(1835508 + (pid * 3))) ~= bounty_amount then
+                        Commands("bounty" .. player_name .. " " .. bounty_amount)
+                    end
                 end
-                util.yield(12000)
+                util.yield()
             end)
 
             bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
@@ -1090,25 +1045,79 @@ util.keep_running()
 
             local attack = player:list(Translate("Attack"),{},"")
 
-            attack:action(Translate("Kick"),{},Translate("Use all kick methods"),function()
+            local kick = attack:list(Translate("Kick"))
+            local kick_message = ""
+
+            kick:action(Translate("Kick Player"),{},"",function()
                 Notify(Translate("Attempt to Kick ") .. player_name)
-                StartAttack("kick",pid)
+                if kick_message ~= "" then
+                    local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
+                    local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
+                    SetPathVal("Online>Chat>Bypass Character Filter", true)
+                    SetPathVal("Online>Chat>Bypass Profanity Filter", true)
+                    util.yield()
+                    Commands("sendpm" .. player_name .. " " .. kick_message)
+                    util.yield()
+                    SetPathVal("Online>Chat>Bypass Character Filter", bpcharacter_def)
+                    SetPathVal("Online>Chat>Bypass Profanity Filter", bpprofanity_def)
+                end
+                util.yield()
+                Commands("kick" .. player_name)
             end)
 
-            attack:action(Translate("Crash"),{},Translate("Use all crash methods"),function()
+            kick:action(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),function()
+                local organisation_index = memory.read_int(memory.script_global((1892714 + pid * 599))) -- thanks to MusinessBanager devs for the memory Reas
+                local org_members = {}
+                if organisation_index ~= -1 then
+                    for _, pid2 in pairs(players.list()) do
+                        if memory.read_int(memory.script_global((1892714 + pid2 * 599))) == organisation_index then
+                            table.insert(org_members, pid2)
+                        end
+                    end
+                else
+                    table.insert(org_members, pid)
+                end
+                if #org_members > 1 then
+                    Notify(Translate("Attempt to Kick ") .. player_name .. Translate(" organisation."))
+                else
+                    Notify(Translate("Attempt to Kick ") .. player_name)
+                end
+                for _, player_to_kick in pairs(org_members) do
+                    if player_to_kick ~= players.user() then
+                        if kick_message ~= "" then
+                            local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
+                            local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
+                            SetPathVal("Online>Chat>Bypass Character Filter", true)
+                            SetPathVal("Online>Chat>Bypass Profanity Filter", true)
+                            util.yield()
+                            Commands("sendpm" .. players.get_name(player_to_kick) .. " " .. kick_message)
+                            util.yield()
+                            SetPathVal("Online>Chat>Bypass Character Filter", bpcharacter_def)
+                            SetPathVal("Online>Chat>Bypass Profanity Filter", bpprofanity_def)
+                        end
+                        util.yield()
+                        Commands("kick" .. players.get_name(player_to_kick))
+                    end
+                end
+            end)
+
+            kick:text_input(Translate("Kick Message"), {"mehkickmessage"}, Translate("Will send a private chat message to the player when kicking him."), function(str) 
+                kick_message = str
+            end)
+
+            attack:action(Translate("Crash"),{},Translate("Use all crash methods."),function()
                 Notify(Translate("Attempt to Crash ") .. player_name)
-                StartAttack("crash",pid)
+                Crash(pid)
             end)
 
-            attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him"),function()
+            attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him.\nNote: You may be karma."),function()
                 Notify(Translate("Nuke attempt on ") .. player_name)
-                StartAttack("kick",pid)
-                util.yield(5000)
-                StartAttack("crash",pid)
+                Crash(pid)
+                util.yield(2000)
+                Commands("kick" .. player_name)
             end)
 
             player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
-                util.yield()
                 if on then
                     if #player_spectate ~= 0 then
                         Commands("mehspectate" .. player_spectate[1] .. " off")
