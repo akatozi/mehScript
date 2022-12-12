@@ -1,32 +1,15 @@
 # mehScript
 Meh lua Script for Stand
 
-**Update 0.80**
+**Update 0.81**
 
-• Added Online > Session > Bounty > Auto Bounty
-
-• Added Online > Session > Bounty > Bounty Ammount
-
-• Added Online > Session > Bounty > Exclude Self
-
-• Added Details and changed some features' name
-
-• Fixed Stand > Protections
-
-• Removed Self > Movement > Levitation Speed
-
-• Removed Self > Weapons > Rapid Fire
-
-• Removed Online > Session > Script Host Bruteforce
-
-• Removed Online > Session > Show OTR Players
-
-• Removed Rendering > Synthwave
-
-• Removed Game > Show FPS
-
-• Removed Game > Radio > Radio Everywhere
-
-• Some minor improvements
-
-*( also thanks to lance for his tips )*
+- Added Online > Session > Auto Kick Tryhard
+- Added Player > Attack > Kick > Preset Message *( not sure of this feature :moyai: )*
+- Added Player > Attack > Crash > Crash Organisation
+- Removed Self > Weapons > No Recoil
+- Removed Self > Weapons > No Spread
+- Removed Game > Radio
+- Fixed Online > Session > Bounty *( some players dont have bounty and with "Exclude Me" on you can have bounty sometime )*
+- Fixed Vehicle > Drift > Drift *( wheels glitch if SHIFT pressed when car is stopped )*
+- Updated Stand > Protections
+- Some improvements
