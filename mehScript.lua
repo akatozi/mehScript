@@ -1,4 +1,4 @@
-local version = "0.81"
+local version = "0.811"
 util.keep_running()
 
 --===============--
@@ -64,8 +64,8 @@ util.keep_running()
     local GetOn = function(on) if on then return "on" else return "off" end end
     local InSession = function() return util.is_session_started() and not util.is_session_transition_active() end
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(path)) end
-    local SetPathVal = function(path,state) menu.set_value(menu.ref_by_path(path),state) end
-    local ClickPath = function(path) menu.trigger_command(menu.ref_by_path(path)) end
+    local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) end end
+    local ClickPath = function(path) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.trigger_command(path_ref) end end
     local Notify = function(str) if notifications_enabled or update_available then if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("= mehScript =\n"..str) end end end
 
 --===============--
@@ -654,8 +654,6 @@ util.keep_running()
                     "Online>Protections>Events>Kick From Vehicle",
                     "Online>Protections>Events>Force Camera Forward",
                     "Online>Protections>Events>Modded Event",
-                    "Online>Protections>Events>CEO/MC Ban",
-                    "Online>Protections>Events>CEO/MC Ban (Not My CEO)",
                     "Online>Protections>Events>CEO/MC Kick",
                     "Online>Protections>Events>CEO/MC Kick (Not My Boss)",
                 },
