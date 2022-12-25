@@ -1,7 +1,7 @@
 # mehScript
 Meh lua Script for Stand
 
-**Update 0.811**
+**Update 0.82**
 
 - Updated Globals to latest GTA Update
 - Added Online > Session > Become Host
