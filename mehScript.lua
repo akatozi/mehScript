@@ -1,4 +1,4 @@
-local version = "0.811"
+local version = "0.82"
 util.keep_running()
 
 --===============--
@@ -160,7 +160,6 @@ util.keep_running()
             ["About"] = "A Propos",
             ["Credits"] = "Credits",
             ["Join Discord"] = "Rejoindre le Discord",
-            ["Auto Remove Bounty"] = "Retirer Auto. Prime",
             ["Auto Skip Conversation"] = "Passe Auto. Dialogues",
             ["Auto Skip Cutscene"] = "Passe Auto. Cinématiques",
             ["Better than the Stand one."] = "Mieux que celui de Stand.",
@@ -173,7 +172,6 @@ util.keep_running()
             ["Chose the amount of the bounty offered automatically."] = "Choisit la valeur de la prime placée en boucle.",
             ["Auto Bounty"] = "Prime Auto.",
             ["Loop that place a bounty on the player."] = "Place une prime en boucle sur le joueur.",
-            ["Bounty Removed: "] = "Prime Retirée: ",
             ["Undead OTR"] = "Invisible Mort-Vivant",
             ["Infinite ammo in magazine with insane shooting speed."] = "Munitions infini dans le chargeur et cadence de tir incroyable.",
             ["Regenerate to max your health and armor."] = "Régénère au max la vie et armure.",
@@ -181,7 +179,6 @@ util.keep_running()
             ["Keep your ped dry and clean."] = "Garde le personnage sec et propre.",
             ["Display on the radar invisible players."] = "Affiche les joueurs invisibles sur le radar.",
             ["Spoof your session informations so nobody can join you from your R* profile."] = "Masque les informations de la session pour empêcher les gens de vous rejoindre depuis votre profil R*.",
-            ["Automatically remove bounty on your head."] = "Retire automatiquement les primes sur ta tête.",
             ["You will not gain any RP."] = "Tu ne gagneras plus de RP.",
             ["Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."] = "Devient invisible sur le radar sans avertir les autres joueurs.\nNote: Déclenche la détection de Vie Modder.",
             ["Automatically skip all conversations."] = "Passe automatiquement les dialogues.",
@@ -220,6 +217,11 @@ util.keep_running()
             ["Auto Kick Tryhard"] = "Exclu Auto. Tryhard",
             ["Kick all tryhard players.\nThings like: "] = "Exclu tous les joueurs avec un pseudo tryhard.\nExemple: ",
             ["Reason: Tryhard Name"] = "Raison: Nom de Tryhard",
+            ["Warning: You are about to kick players until you become host. Are you sure ?"] = "Attention: Tu es va exclure des joueurs jusqu'à être l'hôte. Es-tu sûr ?",
+            ["You Are Host."] = "Tu Es Hôte.",
+            ["Kick players until you become host."] = "Exclu des joueurs jusqu'à que tu sois hôte.",
+            ["Become Host"] = "Devenir Hôte",
+            ["Hey, don't hesitate to join the discord !"] = "Salut, n'hésite pas à rejoindre le discord !",
         }
     }
 
@@ -462,28 +464,24 @@ util.keep_running()
             local session = online:list(Translate("Session"))
             local session_bouty = session:list(Translate("Bounty"))
 
-            local bounty_exclude_self = false
+            local bounty_include_self = true
             local session_bounty_amount = 10000
             session_bouty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop offer bounty on everyone."),function()
-                for _,pid in pairs(players.list()) do
-                    if InSession() then
-                        if not (bounty_exclude_self and (players.get_name(pid) == players.get_name(players.user()))) then
-                            if memory.read_int(memory.script_global(1835508 + (pid*3))) ~= session_bounty_amount then
-                                Commands("bounty"..players.get_name(pid).." "..session_bounty_amount)
-                            end
-                        end
+                for _,pid in pairs(players.list(bounty_include_self)) do
+                    if InSession() and players.get_bounty(pid) ~= session_bounty_amount and players.get_name(pid) ~= "UndiscoveredPlayer" then
+                        Commands("bounty"..players.get_name(pid).." "..session_bounty_amount)
                     end
                     util.yield(150)
                 end
-                util.yield(3000)
+                util.yield(5000)
             end)
 
-            session_bouty:slider(Translate("Bounty Amount"),{""},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+            session_bouty:slider(Translate("Bounty Amount"),{"mehautobountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
                 session_bounty_amount = amount
             end)
 
             session_bouty:toggle(Translate("Exclude Self"),{},Translate("Bounty will not be offered on yourself."),function(on)
-                bounty_exclude_self = on
+                bounty_include_self = on == false
             end)
 
             table.insert(setup["script"],session:toggle(Translate("Spoof Session Informations"),{},Translate("Spoof your session informations so nobody can join you from your R* profile."),function(on)
@@ -497,9 +495,14 @@ util.keep_running()
             end))
 
             Kick = function(pid)
-                Commands("loveletterkick"..players.get_name(pid))
+                local name = players.get_name(pid)
+                if players.exists(pid) then
+                    Commands("loveletterkick"..name)
+                end
                 util.yield(50)
-                Commands("kick"..players.get_name(pid))
+                if players.exists(pid) then
+                    Commands("kick"..name)
+                end
             end
 
             local kick_tryhard
@@ -534,19 +537,19 @@ util.keep_running()
                 end
             end)
 
-        -- features
-
-            table.insert(setup["script"],online:toggle_loop(Translate("Auto Remove Bounty"),{},Translate("Automatically remove bounty on your head."),function()
-                local bounty_address = 1835507 + players.user()*3
-                if InSession() and memory.read_int(memory.script_global(bounty_address)) == 1 then
-                    memory.write_int(memory.script_global(2816932),-1)
-                    memory.write_int(memory.script_global(2364459),2880000)
-                    if notifications_enabled then
-                        Notify(Translate("Bounty Removed: ")..memory.read_int(memory.script_global(bounty_address + 1)))
+            become_host = session:action(Translate("Become Host"),{},Translate("Kick players until you become host."),function(type)
+                menu.show_warning(become_host, type, Translate("Warning: You are about to kick players until you become host. Are you sure ?"), function()
+                    if InSession() then
+                        while players.get_host() ~= players.user() do
+                            Kick(players.get_host())
+                            util.yield(50)
+                        end
+                        Notify(Translate("You Are Host."))
                     end
-                end
-                util.yield(5000)
-            end))
+                end)
+            end)
+
+        -- features
 
             online:toggle_loop(Translate("Disable RP Gain"),{},Translate("You will not gain any RP."),function()
                 memory.write_float(memory.script_global(262146),0)
@@ -903,13 +906,18 @@ util.keep_running()
             -- credits
 
                 local credits = misc:list(Translate("Credits"))
-                local credits_action = function(name,detail) credits:action(name,{},detail,function() end) end
                 credits:divider("Akatozi.#4991")
 
             -- links
 
                 misc:hyperlink(Translate("Join Discord"),"https://discord.gg/uUNRn6xgw5")
                 misc:hyperlink("Github","https://github.com/akat0zi/mehScript")
+
+        main:hyperlink(Translate("Join Discord"),"https://discord.gg/uUNRn6xgw5")
+
+    if not SCRIPT_SILENT_START and SCRIPT_MANUAL_START then
+        Notify(Translate("Hey, don't hesitate to join the discord !"))
+    end 
 
 --===============--
 -- Player Menu
@@ -950,14 +958,14 @@ util.keep_running()
             local bounty_amount = 10000
             bounty:toggle_loop(Translate("Auto Bounty"),{""},Translate("Loop that place a bounty on the player."),function()
                 if InSession() then
-                    if memory.read_int(memory.script_global(1835508 + (pid*3))) ~= bounty_amount then
+                    if players.get_bounty(pid) ~= bounty_amount then
                         Commands("bounty"..player_name.." "..bounty_amount)
                     end
                 end
-                util.yield(150)
+                util.yield(1000)
             end)
 
-            bounty:slider(Translate("Bounty Amount"),{""},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+            bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
                 bounty_amount = amount
             end)
 
@@ -1003,11 +1011,11 @@ util.keep_running()
             end)
 
             GetOrgMembers = function(pid)
-                local organisation_index = memory.read_int(memory.script_global((1892714 + pid*599))) -- thanks to MusinessBanager devs for the memory Reas
+                local organisation_index = memory.read_int(memory.script_global(1894573 + 1 + (pid * 608) + 10)) -- thanks to MusinessBanager devs for the memory address
                 local org_members = {}
                 if organisation_index ~= -1 then
                     for _,pid2 in pairs(players.list()) do
-                        if memory.read_int(memory.script_global((1892714 + pid2*599))) == organisation_index then
+                        if memory.read_int(memory.script_global(1894573 + 1 + (pid2 * 608) + 10)) == organisation_index then
                             table.insert(org_members,pid2)
                         end
                     end
@@ -1020,7 +1028,7 @@ util.keep_running()
             kick:action(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),function()
                 org_members = GetOrgMembers(pid)
                 if #org_members > 1 then
-                    Notify(Translate("Attempt to Kick ")..player_name..Translate(" organisation."))
+                    Notify(Translate("Attempt to Kick ")..player_name.."'s"..Translate(" organisation."))
                 else
                     Notify(Translate("Attempt to Kick ")..player_name)
                 end
@@ -1095,8 +1103,6 @@ util.keep_running()
             end)
     end
 
-    for _,pid in pairs(players.list()) do
-        PlayerMenu(pid)
-    end
     players.on_join(PlayerMenu)
     players.on_join(CheckTryhard)
+    players.dispatch_on_join()
