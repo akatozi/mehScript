@@ -1,10 +1,11 @@
 # mehScript
 Meh lua Script for Stand
 
-**Update 0.82**
+**Update 0.83**
 
-- Updated Globals to latest GTA Update
-- Added Online > Session > Become Host
-- Removed Online > Auto Remove Bounty
-- Fixed and Improved Bounty Features
-- Minor Improvements
+- Added Player > Attack > Add Block Join Reaction
+- Added Game > Rendering > Always Clear Weather
+- Added Online > Fast Spoofing
+- Removed Misc > Discord
+- Improved Stand > Protections > Ultimate
+- Improved Code
