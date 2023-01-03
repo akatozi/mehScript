@@ -1116,7 +1116,6 @@ util.keep_running()
     Crash = function(pid,name)
         if add_block_join_reaction then
             Commands("historyblock"..name.." on")
-            util.toast("historyblock"..name.." on")
         end
         for _,cmd in pairs(attack["crash"]) do
             if players.exists(pid) and players.get_name(pid) == name then
