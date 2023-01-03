@@ -1,4 +1,4 @@
-local version = "0.83"
+local version = "0.831"
 util.keep_running()
 
 --===============--
@@ -124,8 +124,8 @@ util.keep_running()
             ["Refill Health & Armor"] = "Regénérer Vie et Armure",
             ["Auto Armor after Death"] = "Armure Après Mort",
             ["Online"] = "En-ligne",
-            ["Regular"] = "Classique",
-            ["Ultimate"] = "Ultime",
+            ["Femboy"] = "Femboy",
+            ["God"] = "Dieu",
             ["Setup"] = "Préréglages",
             ["Disable RP Gain"] = "Désactiver Gain de RP",
             ["Job"] = "Activité",
@@ -224,6 +224,11 @@ util.keep_running()
             ["Add Block Join Reaction"] = "Ajouter la Réaction Bloquer Entrée",
             ["When removing the player, it'll add him the block join reaction so he will never join you again."] = "En retirant le joueur, cela lui ajoute la réaction bloquer l'entrée pour qu'il ne puisse plus jamais vous rejoindre.",
             ["Force clear weather.\nNote: It avoids the snow visual glitch in transitions."] = "Force la météo dégagée.\nNote: Cela empêche le bug visuel de la neige pendant les transtions.",
+            ["Undetected"] = "Indétectable",
+            ["Similar to Gigachad but without the features that can trigger modder detections."] = "Similaire à Gigachad mais sans les options pouvant déclencher des détections de modder.",
+            ["Apply Recommended Settings"] = "Appliquer Réglages Recommandés",
+            ["Recommended Settings Applied."] = "Réglages Recommandés Appliqués.",
+            ["Will apply recommended profile.\nMake sure to have a backup of your profile."] = "Va appliquer le profil recommandé.\nFaîtes attention de bien avoir une sauvegarde de votre profil."
         }
     }
 
@@ -274,7 +279,7 @@ util.keep_running()
                 async_http.dispatch()
             end)
             menu.attach_before(self,menu.detach(update_button))
-        elseif tonumber(version) > tonumber(output) then
+        elseif tonumber(version)>tonumber(output) then
             dev_build = main:divider("Dev Build",{},"",function() end)
             menu.attach_before(self,menu.detach(dev_build))
         end
@@ -300,6 +305,8 @@ util.keep_running()
             "Vehicle>Permanent Mint Condition",
             "Self>Weapons>No Spread",
             "Self>Weapons>No Recoil",
+            "Self>Infinite Stamina",
+            "Vehicle>Can't Be Locked On",
         },
         script = {},
         pvp = {
@@ -309,6 +316,16 @@ util.keep_running()
             "Self>Weapons>No Recoil",
             lua_path..">"..Translate("Self")..">"..Translate("Weapons")..">"..Translate("Thermal Scope"),
             lua_path..">"..Translate("Self")..">"..Translate("Auto Armor after Death"),
+        },
+        undetected = {
+            "Self>Weapons>Infinite Ammo",
+            "Self>Gracefulness",
+            "Self>Glued To Seats",
+            "Self>Lock Wanted Level",
+            "Self>Weapons>No Spread",
+            "Self>Weapons>No Recoil",
+            "Self>Infinite Stamina",
+            "Vehicle>Can't Be Locked On",
         },
     }
 
@@ -328,7 +345,7 @@ util.keep_running()
                     Commands("levitateassistdown 0.6")
                     Commands("levitateassistdeadzone 13")
                     Commands("levitateassistsnap 0.1")
-                    Notify(Translate("Levitation Mode").." "..Translate("Stand Default"))
+                    Notify(Translate("Levitation Mode").." : "..Translate("Stand Default"))
             end)
 
             levitation_mode:action(Translate("No Clip"),{},Translate("Levitation without any weird forces on you."),function()
@@ -339,7 +356,7 @@ util.keep_running()
                 Commands("levitateassistdown 0")
                 Commands("levitateassistdeadzone 0")
                 Commands("levitateassistsnap 0")
-                Notify(Translate("Levitation Mode").." "..Translate("No Clip"))
+                Notify(Translate("Levitation Mode").." : "..Translate("No Clip"))
             end)
 
         -- weapons
@@ -413,7 +430,7 @@ util.keep_running()
 
             local get_angle = function(vec)
                 local angle = 360 - math.fmod(ENTITY._GET_ENTITY_PHYSICS_HEADING(vec) - get_heading(vec) + 360,360)
-                if angle > 180 then
+                if angle>180 then
                     angle = 0 - (360 - angle)
                 end
                 return math.floor(angle+0.5)
@@ -431,7 +448,7 @@ util.keep_running()
                         end
                         local drift_angle = get_angle(vec)
                         VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec,true)
-                        if drift_assist and math.abs(drift_angle) > drift_assist_value then
+                        if drift_assist and math.abs(drift_angle)>drift_assist_value then
                             VEHICLE.SET_VEHICLE_STEER_BIAS(vec,math.rad(drift_angle*0.69))
                             VEHICLE.SET_VEHICLE_REDUCE_GRIP(vec,false)
                         end
@@ -553,26 +570,33 @@ util.keep_running()
             end)
 
             become_host = session:action(Translate("Become Host"),{},Translate("Kick players until you become host."),function(type)
-                menu.show_warning(become_host, type, Translate("Warning: You are about to kick players until you become host. Are you sure ?"), function()
-                    if InSession() then
-                        while players.get_host() ~= players.user() do
-                            Kick(players.get_host())
-                            util.yield(50)
-                        end
+                if InSession() then
+                    if players.get_host() ~= players.user() then
+                        local players_before_host = players.get_host_queue_position(players.user())
+                        menu.show_warning(become_host, type, Translate("Warning: You are about to kick around "..players_before_host.." players until you become host. Are you sure ?"), function()
+                            if InSession() then
+                                while players.get_host() ~= players.user() do
+                                    Kick(players.get_host())
+                                    util.yield(50)
+                                end
+                                Notify(Translate("You Are Host."))
+                            end
+                        end)
+                    else
                         Notify(Translate("You Are Host."))
                     end
-                end)
+                end
             end)
 
         -- features
 
             online:toggle(Translate("Fast Spoofing"),{},Translate("Pick a random players in your Player History and fully spoof your profile as him."),function(on)
                 if on then
-                    Commands("spoofname on")
-                    ClickPath("Online>Spoofing>Name Spoofing>Get Random Name From Player History")
                     Commands("spoofrid 2")
+                    ClickPath("Online>Spoofing>RID Spoofing>Get Random RID From Player History")
                     util.yield(100)
-                    ClickPath("Online>Spoofing>RID Spoofing>Get RID From Spoofed Name")
+                    Commands("spoofname on")
+                    ClickPath("Online>Spoofing>Name Spoofing>Get Name From Spoofed RID")
                     if stand_edition >= 2 then
                         menu.set_value(spoof_session_informations,true)
                     end
@@ -583,6 +607,7 @@ util.keep_running()
                         menu.set_value(spoof_session_informations,false)
                     end
                 end
+                util.yield(100)
                 Notify("Your name is now "..players.get_name(players.user()))
             end)
             
@@ -676,12 +701,12 @@ util.keep_running()
         -- protections
 
             local protection = {
-                regular = { -- on = 4
+                femboy = { -- on = 4
                     "Online>Protections>Events>Crash Event",
                     "Online>Protections>Events>Kick Event",
                 },
 
-                ultimate = { -- on = 4
+                god = { -- on = 4
                     "Online>Protections>Syncs>Invalid Model Sync",
                     "Online>Protections>Syncs>World Object Sync",
                     "Online>Protections>Syncs>Cage",
@@ -703,24 +728,28 @@ util.keep_running()
                     "Online>Protections>Events>Force Camera Forward",
                     "Online>Protections>Events>Modded Event",
                     "Online>Protections>Events>CEO/MC Kick",
-                    "Online>Protections>Events>CEO/MC Kick (Not My Boss)",
                 },
 
                 additional = {
                     "Online>Protections>Buttplug Kick Reactions>Myself>Block",
                     "Online>Protections>Breakup Kick Reactions>Block",
-                    "Online>Protections>Host Kicks>Host Kick Karma",
                     "Online>Protections>Host Kicks>Lessen Host Kicks",
-                    "Online>Protections>Breakup Kick Reactions>Karma",
                     "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Karma",
-                    "Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma",
                     "Online>Protections>Love Letter & Desync Kicks>Block Love Letter Kicks",
                     "Online>Protections>Lessen Breakup Kicks As Host",
-                    "Online>Protections>Block Join Karma",
                     "Online>Protections>Block Entity Spam>Block Entity Spam",
                     "Online>Protections>Block Entity Spam>Automatically Use Anti-Crash Cam",
                     "Online>Protections>Prevent Renderer Working To Death",
                     "Online>Protections>Block RID 0 Crash",
+                },
+
+                additional_regular_stand = {
+                    "Online>Protections>Host Kicks>Host Kick Karma",
+                    "Online>Protections>Block Join Karma",
+                    "Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma",
+                },
+
+                additional_ultimate_stand = {
                     "Online>Protections>Block RID 0 Crash For Others",
                 },
 
@@ -744,7 +773,6 @@ util.keep_running()
                     "Online>Protections>Events>Infinite Phone Ringing",
                     "Online>Protections>Events>Vehicle Takeover",
                     "Online>Protections>Events>Freeze",
-                    "Online>Protections>Events>Love Letter Kick Blocking Event",
                     "Online>Protections>Events>Explosion Spam",
                     "Online>Protections>Events>Camera Shaking Event",
                     "Online>Protections>Events>Raw Network Events>PTFX",
@@ -753,7 +781,6 @@ util.keep_running()
                     "Online>Protections>Events>Raw Network Events>Give Weapon Event",
                     "Online>Protections>Events>Raw Network Events>GIVE_PICKUP_REWARDS_EVENT",
                     "Online>Protections>Events>Raw Network Events>REMOVE_STICKY_BOMB_EVENT",
-                    "Online>Protections>Events>Raw Network Events>REPORT_MYSELF_EVENT",
                     "Online>Protections>Events>Love Letter Kick Blocking Event",
                     "Online>Reactions>Love Letter Kick Reactions",
                 }
@@ -776,7 +803,7 @@ util.keep_running()
                     end
                 end
                 local special_on = 0
-                if mode == "ultimate" and on ~= 0 then
+                if mode == "god" and on ~= 0 then
                     special_on = 2
                 end
                 SetProtectionsToggleSpecial(special_on)
@@ -821,24 +848,34 @@ util.keep_running()
                 for _,path in pairs(protection["additional_notif"]) do
                     SetPathVal(path,notification_on)
                 end
+                if stand_edition >= 2 then
+                    for _,path in pairs(protection["additional_regular_stand"]) do
+                        SetPathVal(path,add_state)
+                    end
+                end
+                if stand_edition >= 3 then
+                    for _,path in pairs(protection["additional_ultimate_stand"]) do
+                        SetPathVal(path,add_state)
+                    end
+                end
             end
 
-            Protections = function(str)
-                if str == "Regular" then
+            Protections = function(str,toast=1)
+                if str == "Femboy" then
                     Commands("novotekicks sctv")
-                    SetProtections("ultimate",false)
-                    SetProtections("regular",true)
-                elseif str == "Ultimate" then
+                    SetProtections("god",false)
+                    SetProtections("femboy",true)
+                elseif str == "God" then
                     Commands("novotekicks sctv")
-                    SetProtections("regular",true)
-                    SetProtections("ultimate",true)
+                    SetProtections("femboy",true)
+                    SetProtections("god",true)
                 elseif str == "None" then
                     Commands("novotekicks off")
-                    SetProtections("regular",false)
-                    SetProtections("ultimate",false)
+                    SetProtections("femboy",false)
+                    SetProtections("god",false)
                 end
-                if notifications_enabled then
-                    Notify(Translate("Protections").." "..Translate(str))
+                if notifications_enabled and toast == 1 then
+                    Notify(Translate("Protections").." : "..Translate(str))
                 end
             end
 
@@ -860,12 +897,12 @@ util.keep_running()
                 Protections("None")
             end)
 
-            protectionm:action(Translate("Regular"),{},Translate("Enable crash and kick protections."),function()
-                Protections("Regular")
+            protectionm:action(Translate("Femboy"),{},Translate("Enable crash and kick protections."),function()
+                Protections("Femboy")
             end)
 
-            protectionm:action(Translate("Ultimate"),{},Translate("Enable all protections."),function()
-                Protections("Ultimate")
+            protectionm:action(Translate("God"),{},Translate("Enable all protections."),function()
+                Protections("God")
             end)
 
         -- setup
@@ -874,6 +911,13 @@ util.keep_running()
                 SetupOff(mode)
                 if mode == "gigachad" then
                     for _,path in pairs(setup["gigachad"]) do
+                        SetPathVal(path,true)
+                    end
+                    for _,ref in pairs(setup["script"]) do
+                        menu.set_value(ref,true)
+                    end
+                elseif mode == "undetected" then
+                    for _,path in pairs(setup["undetected"]) do
                         SetPathVal(path,true)
                     end
                     for _,ref in pairs(setup["script"]) do
@@ -892,13 +936,20 @@ util.keep_running()
                     for _,path in pairs(setup["gigachad"]) do
                         SetPathVal(path,false)
                     end
-                    for _,ref in pairs(setup["script"]) do
-                        menu.set_value(ref,false)
-                    end
                 end
                 if mode ~= "pvp" then
                     for _,path in pairs(setup["pvp"]) do
                         SetPathVal(path,false)
+                    end
+                end
+                if mode ~= "undetected" then
+                    for _,path in pairs(setup["undetected"]) do
+                        SetPathVal(path,false)
+                    end
+                    if mode ~= gigachad then
+                        for _,ref in pairs(setup["script"]) do
+                            menu.set_value(ref,false)
+                        end
                     end
                 end
             end
@@ -908,22 +959,102 @@ util.keep_running()
             setupm:action(Translate("Job & Heists"),{},Translate("Everything is turned off, you are now 'legit'."),function()
                 Setup("job")
                 if notifications_enabled then
-                    Notify(Translate("Setup").." "..Translate("Job & Heists"))
+                    Notify(Translate("Setup").." : "..Translate("Job & Heists"))
                 end
             end)
 
             setupm:action(Translate("Fight"),{},Translate("Turn on Infinite Ammo, Never Wanted, No Recoil, No Spread and Thermal Scope."),function()
                 Setup("pvp")
                 if notifications_enabled then
-                    Notify(Translate("Setup").." "..Translate("Fight"))
+                    Notify(Translate("Setup").." : "..Translate("Fight"))
+                end
+            end)
+
+            setupm:action(Translate("Undetected"),{},Translate("Similar to Gigachad but without the features that can trigger modder detections."),function()
+                Setup("undetected")
+                if notifications_enabled then
+                    Notify(Translate("Setup").." : "..Translate("Undetected"))
                 end
             end)
 
             setupm:action(Translate("Gigachad"),{},Translate("Turn on all useful features so nobody can disturb you."),function()
                 Setup("gigachad")
                 if notifications_enabled then
-                    Notify(Translate("Setup").." "..Translate("Gigachad"))
+                    Notify(Translate("Setup").." : "..Translate("Gigachad"))
                 end
+            end)
+
+            local path_to_click = {
+                "Online>Transitions>Join Group Override>Spectator",
+            }
+
+            local path_to_enable = {
+                "Online>Transitions>Speed Up>Don't Wait For Data Broadcast",
+                "Online>Transitions>Speed Up>Don't Wait For Mission Launcher",
+                "Online>Transitions>Speed Up>Don't Ask For Permission To Spawn",
+                "Online>Transitions>Skip Swoop Down",
+                "Online>Transitions>Disable Spawn Activities",
+                "Online>Session>Block Joins>From Kicked Players",
+                "Online>Session>Player Leave Reasons>Notification",
+                "Online>Session>Player Leave Reasons>Write To Log File",
+                "Online>Session>Player Leave Reasons>Write To Console",
+                "Online>Enhancements>Phone Animations",
+                "Online>Enhancements>Disable Idle/AFK Kick",
+                "Online>Enhancements>Speed Up Dialing",
+                "Online>Enhancements>Disable Death Barriers",
+                "Online>Enhancements>Disable Mechanic Cooldown",
+                "Online>Enhancements>Disable Oppressor Mk II Cooldown",
+                "Online>Enhancements>Disable VIP Work Cooldown",
+                "Online>Enhancements>Disable Suicide Cooldown",
+                "Online>Enhancements>Disable Passive Mode Cooldown",
+                "Online>Enhancements>Disable Orbital Cannon Cooldown",
+                "Online>Enhancements>Disable Event End Countdown Audio",
+                "Online>Enhancements>Bypass Interior Restrictions",
+                "Online>Enhancements>Bypass Interaction Menu Barriers",
+                "Online>Enhancements>Bypass Casino Region Lock",
+                "Online>Enhancements>Bypass Time Trial Vehicle Suitability",
+                "Online>Enhancements>Notify On Commendation",
+                "Online>Enhancements>Disable Daily Expenses",
+                "Online>Chat>Typing Indicator>Typing Indicator",
+                "Online>Chat>Log Chat Messages>Chat.txt",
+                "Online>Chat>Log Chat Messages>Log.txt",
+                "Online>Chat>Log Chat Messages>Console",
+                "Online>Reveal Off The Radar Players",
+                "Online>Reactions>RID Join Reactions>Notification",
+                "Online>Reactions>RID Join Reactions>Block",
+                "Online>Reactions>RID Join Reactions>Write To Log File",
+                "Online>Reactions>RID Join Reactions>Write To Console",
+            }
+
+            local path_to_disable = {
+                "Online>Protections>Detections>Stand User Identification",
+            }
+
+            local path_to_set = {
+                "Online>Reactions>Player Join Reactions>Notification",
+                "Online>Reactions>Player Join Reactions>Write To Log File",
+                "Online>Reactions>Player Join Reactions>Write To Console",
+                "Online>Reactions>Host Change Reactions>Notification",
+                "Online>Reactions>Host Change Reactions>Write To Log File",
+                "Online>Reactions>Host Change Reactions>Write To Console",
+            }
+
+            stand:action(Translate("Apply Recommended Settings"),{},Translate("Will apply recommended profile.\nMake sure to have a backup of your profile."),function()
+                Setup("undetected")
+                Protections("God",0)
+                for _,path in pairs(path_to_click) do
+                    ClickPath(path)
+                end
+                for _,path in pairs(path_to_enable) do
+                    SetPathVal(path,true)
+                end
+                for _,path in pairs(path_to_disable) do
+                    SetPathVal(path,false)
+                end
+                for _,path in pairs(path_to_set) do
+                    SetPathVal(path,0)
+                end
+                Notify(Translate("Recommended Settings Applied."))
             end)
 
     --===============--
@@ -1073,7 +1204,7 @@ util.keep_running()
 
             kick:action(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),function()
                 org_members = GetOrgMembers(pid)
-                if #org_members > 1 then
+                if #org_members>1 then
                     Notify(Translate("Attempt to Kick ")..player_name.."'s"..Translate(" organisation."))
                 else
                     Notify(Translate("Attempt to Kick ")..player_name)
@@ -1100,7 +1231,7 @@ util.keep_running()
                 kick_message = str
             end)
 
-            local preset_kick_message_table = {"Stand On Top !","Taste the GIGACHAD power !","Can't Beat Kiddion's VIP Menu","10$ Stand > 120$ VIP 2TAKE1","A femboy is a slang term for a young, usually cisgender male who displays traditionally feminine characteristics. While the term can be used as an insult, some in the LGBTQ community use the term positively to name forms of gender."}
+            local preset_kick_message_table = {"Stand On Top !","Taste the GIGACHAD power !","Can't Beat Kiddion's VIP Menu","10$ Stand>120$ VIP 2TAKE1","A femboy is a slang term for a young, usually cisgender male who displays traditionally feminine characteristics. While the term can be used as an insult, some in the LGBTQ community use the term positively to name forms of gender."}
             kick:list_action(Translate("Preset Message"),{},"",preset_kick_message_table,function(i)
                 Commands("mehkickmessage"..player_name.." "..preset_kick_message_table[i])
             end)
@@ -1114,7 +1245,7 @@ util.keep_running()
 
             crash:action(Translate("Crash Organisation"),{},Translate("Crash all organisation members."),function()
                 org_members = GetOrgMembers(pid)
-                if #org_members > 1 then
+                if #org_members>1 then
                     Notify(Translate("Attempt to Crash ")..player_name..Translate(" organisation."))
                 else
                     Notify(Translate("Attempt to Crash ")..player_name)
