@@ -1,4 +1,4 @@
-local version = "0.82"
+local version = "0.83"
 util.keep_running()
 
 --===============--
@@ -43,9 +43,6 @@ util.keep_running()
         ["IS_CONTROL_JUST_PRESSED"]=function(padIndex,control)native_invoker.begin_call()native_invoker.push_arg_int(padIndex)native_invoker.push_arg_int(control)native_invoker.end_call_2(0x580417101DDB492F)return native_invoker.get_return_value_bool()end,
         ["GET_CONTROL_NORMAL"]=function(padIndex,control)native_invoker.begin_call();native_invoker.push_arg_int(padIndex);native_invoker.push_arg_int(control);native_invoker.end_call("EC3C9B8D5327B563");return native_invoker.get_return_value_float();end,
         ["IS_CONTROL_PRESSED"]=function(padIndex,control)native_invoker.begin_call();native_invoker.push_arg_int(padIndex);native_invoker.push_arg_int(control);native_invoker.end_call("F3A21BCD95725A4A");return native_invoker.get_return_value_bool();end,
-    }
-    NETWORK={
-        ["_SET_RELATIONSHIP_TO_PLAYER"]=function(player,p1)native_invoker.begin_call()native_invoker.push_arg_int(player)native_invoker.push_arg_bool(p1)native_invoker.end_call_2(0xA7C511FA1C5BDA38)end,
     }
     PHYSICS={
         ["_SET_LAUNCH_CONTROL_ENABLED"]=function(toggle)native_invoker.begin_call()native_invoker.push_arg_bool(toggle)native_invoker.end_call_2(0xAA6A6098851C396F)end,
@@ -166,7 +163,6 @@ util.keep_running()
             ["Disable all protections."] = "Désactive toutes les protections.",
             ["Enable crash and kick protections."] = "Active protections de crash et exclusion.",
             ["Enable all protections."] = "Active toutes les protections.",
-            ["Ghost Mode"] = "Mode Fantôme",
             ["Bounty"] = "Prime",
             ["Bounty Amount"] = "Somme Prime",
             ["Chose the amount of the bounty offered automatically."] = "Choisit la valeur de la prime placée en boucle.",
@@ -205,7 +201,8 @@ util.keep_running()
             ["Will send a private chat message to the player when kicking him."] = "Envoi un message privé au joueur en l'éjectant.",
             ["Kick Message"] = "Message d'Exclusion",
             ["Turn on all useful features so nobody can disturb you."] = "Active toutes les fonctionnalités utiles pour que personne ne t'embête.",
-            ["Everything is turned off,you are now 'legit'."] = "Tout est désactivé,tu es 'legit'.",
+            ["Turn on Infinite Ammo, Never Wanted, No Recoil, No Spread and Thermal Scope."] = "Active Munitions Infinies, Jamais Recherché, Pas de Recul, Pas de Dispertion et Lunette Thermique.",
+            ["Everything is turned off, you are now 'legit'."] = "Tout est désactivé,tu es 'legit'.",
             ["Job & Heists"] = "Activités et Braquages",
             ["Fight"] = "Combat",
             ["Levitation without any weird forces on you."] = "Lévitation sans les forces bizarres te poussant vers le bas.",
@@ -221,7 +218,12 @@ util.keep_running()
             ["You Are Host."] = "Tu Es Hôte.",
             ["Kick players until you become host."] = "Exclu des joueurs jusqu'à que tu sois hôte.",
             ["Become Host"] = "Devenir Hôte",
-            ["Hey, don't hesitate to join the discord !"] = "Salut, n'hésite pas à rejoindre le discord !",
+            ["Always Clear Weather"] = "Météo Toujours Dégagée",
+            ["Fast Spoofing"] = "Spoof Rapide",
+            ["Pick a random players in your Player History and fully spoof your profile as him."] = "Prend un joueur au hasard dans ton Historique de Joueur et spoof complétement ton profile comme le sien.",
+            ["Add Block Join Reaction"] = "Ajouter la Réaction Bloquer Entrée",
+            ["When removing the player, it'll add him the block join reaction so he will never join you again."] = "En retirant le joueur, cela lui ajoute la réaction bloquer l'entrée pour qu'il ne puisse plus jamais vous rejoindre.",
+            ["Force clear weather.\nNote: It avoids the snow visual glitch in transitions."] = "Force la météo dégagée.\nNote: Cela empêche le bug visuel de la neige pendant les transtions.",
         }
     }
 
@@ -283,6 +285,8 @@ util.keep_running()
 -- Main
 --===============--
 
+    local add_block_join_reaction = true
+	local stand_edition = menu.get_edition()
     local lua_path = "Stand>Lua Scripts>"..string.gsub(string.gsub(SCRIPT_RELPATH,".lua",""),"\\",">")
 
     local setup = {
@@ -484,35 +488,32 @@ util.keep_running()
                 bounty_include_self = on == false
             end)
 
-            table.insert(setup["script"],session:toggle(Translate("Spoof Session Informations"),{},Translate("Spoof your session informations so nobody can join you from your R* profile."),function(on)
-                if on then
-                    Commands("spoofsession storymode")
-                    ClickPath("Online>Spoofing>Session Spoofing>Session Type>Invalid")
-                else
-                    Commands("spoofsession off")
-                    ClickPath("Online>Spoofing>Session Spoofing>Session Type>Not Spoofed")
-                end
-            end))
-
-            Kick = function(pid)
-                local name = players.get_name(pid)
-                if players.exists(pid) then
-                    Commands("loveletterkick"..name)
-                end
-                util.yield(50)
-                if players.exists(pid) then
-                    Commands("kick"..name)
-                end
-            end
+            if stand_edition >= 2 then
+				spoof_session_informations = session:toggle(Translate("Spoof Session Informations"),{},Translate("Spoof your session informations so nobody can join you from your R* profile."),function(on)
+					if on then
+						Commands("spoofsession storymode")
+						if stand_edition == 3 then
+							ClickPath("Online>Spoofing>Session Spoofing>Session Type>Invalid")
+						end
+					else
+						Commands("spoofsession off")
+						if stand_edition == 3 then
+							ClickPath("Online>Spoofing>Session Spoofing>Session Type>Not Spoofed")
+						end
+					end
+				end)
+                table.insert(setup["script"],spoof_session_informations)
+			end
 
             local kick_tryhard
             CheckTryhard = function(pid)
                 if pid ~= players.user() and kick_tryhard then
                     local name = players.get_name(pid)
                     local char_count = 0
+                    local letters = {"l","I","i","L","x","X","-"}
                     for i = 1,#name do
                         local char = name:sub(i,i)
-                        if char == "l" or char == "I" or char == "i" or char == "L" or char == "x" or char == "X" or char == "-" then
+                        if table.contains(letters, char) then
                             char_count = char_count + 1
                         end
                     end
@@ -527,6 +528,20 @@ util.keep_running()
                     end
                 end
             end 
+
+            Kick = function(pid)
+                local name = players.get_name(pid)
+                if players.exists(pid) and players.get_name(pid) == name then
+                    if add_block_join_reaction then
+                        Commands("historyblock"..name.." on")
+                    end
+                    Commands("buttplug"..name)
+                    util.yield(200)
+                    if players.exists(pid) and players.get_name(pid) == name then
+                        Commands("kick"..name)
+                    end
+                end
+            end
 
             session:toggle(Translate("Auto Kick Tryhard"),{},Translate("Kick all tryhard players.\nThings like: ").."IllIlIllI, XXX-XXXX-III",function(on)
                 kick_tryhard = on
@@ -551,6 +566,26 @@ util.keep_running()
 
         -- features
 
+            online:toggle(Translate("Fast Spoofing"),{},Translate("Pick a random players in your Player History and fully spoof your profile as him."),function(on)
+                if on then
+                    Commands("spoofname on")
+                    ClickPath("Online>Spoofing>Name Spoofing>Get Random Name From Player History")
+                    Commands("spoofrid 2")
+                    util.yield(100)
+                    ClickPath("Online>Spoofing>RID Spoofing>Get RID From Spoofed Name")
+                    if stand_edition >= 2 then
+                        menu.set_value(spoof_session_informations,true)
+                    end
+                else
+                    Commands("spoofname off")
+                    Commands("spoofrid off")
+                    if stand_edition >= 2 then
+                        menu.set_value(spoof_session_informations,false)
+                    end
+                end
+                Notify("Your name is now "..players.get_name(players.user()))
+            end)
+            
             online:toggle_loop(Translate("Disable RP Gain"),{},Translate("You will not gain any RP."),function()
                 memory.write_float(memory.script_global(262146),0)
             end,function()
@@ -565,7 +600,7 @@ util.keep_running()
                         if ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()) ~= 0 then
                             ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(),0)
                         end
-                        util.yield()
+                        util.yield(200)
                     end
                 else
                     ENTITY.SET_ENTITY_MAX_HEALTH(players.user_ped(),max_health)
@@ -584,31 +619,41 @@ util.keep_running()
 
         -- rendering
 
-            ResetRendering = function()
-                Commands("locktime off")
-                Commands("clouds normal")
-                Commands("weather normal")
-                Commands("shader off")
-                if InSession() then
-                    Commands("syncclock")
+                ResetRendering = function()
+                    Commands("locktime off")
+                    Commands("clouds normal")
+                    Commands("shader off")
+                    if InSession() then
+                        Commands("syncclock")
+                    end
+                    menu.set_value(menu.ref_by_path('World>Aesthetic Light>Aesthetic Light'),false)
+                    menu.set_value(always_clear_toggle, false)
                 end
-                menu.set_value(menu.ref_by_path('World>Aesthetic Light>Aesthetic Light'),false)
-            end
+    
+    
+                local rendering = game:list(Translate("Rendering"))
+                rendering:action(Translate("Default"),{},"",function()
+                    ResetRendering()
+                end)
+    
+                rendering:action(Translate("Clear View"),{},Translate("Lock time to noon, without clouds."),function()
+                    ResetRendering()
+                    Commands("locktime on")
+                    Commands("timesmoothing off")
+                    Commands("time 12")
+                    menu.set_value(always_clear_toggle, true)
+                end)
 
-
-            local rendering = game:list(Translate("Rendering"))
-            rendering:action(Translate("Default"),{},"",function()
-                ResetRendering()
-            end)
-
-            rendering:action(Translate("Clear View"),{},Translate("Lock time to noon, without clouds."),function()
-                ResetRendering()
-                Commands("locktime on")
-                Commands("timesmoothing off")
-                Commands("time 12")
-                Commands("clouds stratoscumulus")
-                Commands("weather extrasunny")
-            end)
+                always_clear_toggle = rendering:toggle_loop(Translate("Always Clear Weather"),{},Translate("Force clear weather.\nNote: It avoids the snow visual glitch in transitions."),function()
+                    if InSession() then
+                        Commands("weather clear")
+                    else
+                        Commands("weather normal")
+                    end
+                    util.yield()
+                end, function()
+                    Commands("weather normal")
+                end)
 
         -- features
 
@@ -700,10 +745,15 @@ util.keep_running()
                     "Online>Protections>Events>Vehicle Takeover",
                     "Online>Protections>Events>Freeze",
                     "Online>Protections>Events>Love Letter Kick Blocking Event",
+                    "Online>Protections>Events>Explosion Spam",
+                    "Online>Protections>Events>Camera Shaking Event",
                     "Online>Protections>Events>Raw Network Events>PTFX",
                     "Online>Protections>Events>Raw Network Events>Remove All Weapons Event",
                     "Online>Protections>Events>Raw Network Events>Remove Weapon Event",
                     "Online>Protections>Events>Raw Network Events>Give Weapon Event",
+                    "Online>Protections>Events>Raw Network Events>GIVE_PICKUP_REWARDS_EVENT",
+                    "Online>Protections>Events>Raw Network Events>REMOVE_STICKY_BOMB_EVENT",
+                    "Online>Protections>Events>Raw Network Events>REPORT_MYSELF_EVENT",
                     "Online>Protections>Events>Love Letter Kick Blocking Event",
                     "Online>Reactions>Love Letter Kick Reactions",
                 }
@@ -855,14 +905,14 @@ util.keep_running()
 
             local setupm = stand:list(Translate("Setup"))
 
-            setupm:action(Translate("Job & Heists"),{},Translate("Everything is turned off,you are now 'legit'."),function()
+            setupm:action(Translate("Job & Heists"),{},Translate("Everything is turned off, you are now 'legit'."),function()
                 Setup("job")
                 if notifications_enabled then
                     Notify(Translate("Setup").." "..Translate("Job & Heists"))
                 end
             end)
 
-            setupm:action(Translate("Fight"),{},Translate("Turn on Infinite Ammo,Never Wanted,No Recoil,No Spread and Thermal Scope."),function()
+            setupm:action(Translate("Fight"),{},Translate("Turn on Infinite Ammo, Never Wanted, No Recoil, No Spread and Thermal Scope."),function()
                 Setup("pvp")
                 if notifications_enabled then
                     Notify(Translate("Setup").." "..Translate("Fight"))
@@ -910,14 +960,9 @@ util.keep_running()
 
             -- links
 
-                misc:hyperlink(Translate("Join Discord"),"https://discord.gg/uUNRn6xgw5")
                 misc:hyperlink("Github","https://github.com/akat0zi/mehScript")
 
         main:hyperlink(Translate("Join Discord"),"https://discord.gg/uUNRn6xgw5")
-
-    if not SCRIPT_SILENT_START and SCRIPT_MANUAL_START then
-        Notify(Translate("Hey, don't hesitate to join the discord !"))
-    end 
 
 --===============--
 -- Player Menu
@@ -925,6 +970,7 @@ util.keep_running()
 
     local attack = {
         crash = {
+            "pipebomb",
             "smash",
             "crash",
             "choke",
@@ -937,8 +983,12 @@ util.keep_running()
     player_spectate = {}
 
     Crash = function(pid,name)
+        if add_block_join_reaction then
+            Commands("historyblock"..name.." on")
+            util.toast("historyblock"..name.." on")
+        end
         for _,cmd in pairs(attack["crash"]) do
-            if players.get_name(pid) == name then
+            if players.exists(pid) and players.get_name(pid) == name then
                 Commands(cmd..name)
             end
             util.yield(100)
@@ -967,10 +1017,6 @@ util.keep_running()
 
             bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
                 bounty_amount = amount
-            end)
-
-            griefing:toggle(Translate("Ghost Mode"),{},Translate("The player can't shoot you anymore,same for you."),function(on)
-                NETWORK._SET_RELATIONSHIP_TO_PLAYER(pid,on)
             end)
 
             griefing:toggle_loop(Translate("Freeze"),{},Translate("Better than the Stand one."),function()
@@ -1084,8 +1130,14 @@ util.keep_running()
                 Notify(Translate("Nuke on ")..player_name)
                 Crash(pid, player_name)
                 util.yield(2000)
-                Kick(pid)
+                if players.get_name(pid) == player_name then
+                    Kick(pid)
+                end
             end)
+
+            attack:toggle(Translate("Add Block Join Reaction"),{},Translate("When removing the player, it'll add him the block join reaction so he will never join you again."),function(on)
+                add_block_join_reaction = on
+            end, true)
 
             player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
                 if on then
