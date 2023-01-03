@@ -1,11 +1,12 @@
 # mehScript
 Meh lua Script for Stand
 
-**Update 0.83**
+**Update 0.84**
 
-- Added Player > Attack > Add Block Join Reaction
-- Added Game > Rendering > Always Clear Weather
-- Added Online > Fast Spoofing
-- Removed Misc > Discord
-- Improved Stand > Protections > Ultimate
-- Improved Code
+- Added Stand > Setup > Undetected
+- Added Stand > Apply Recommended Settings
+- Changed Stand > Protections Names
+- Improved Online > Fast Spoofing
+- Improved Online > Session > Become Host
+- Improved Stand > Protections
+- Some Minor Improvements
