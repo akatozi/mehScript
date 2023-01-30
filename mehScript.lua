@@ -1,4 +1,4 @@
-local version = "0.85"
+local version = "0.851"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -435,14 +435,14 @@ util.require_natives(1672190175)
                 local aiming = PLAYER.IS_PLAYER_FREE_AIMING(players.user())
                 if GRAPHICS.GET_USINGSEETHROUGH() and not aiming then
                     menu.trigger_command(thermal_command,'off')
-                    GRAPHICS._SEETHROUGH_SET_MAX_THICKNESS(1)
+                    GRAPHICS.SEETHROUGH_SET_MAX_THICKNESS(1)
                 elseif PAD.IS_CONTROL_JUST_PRESSED(38,38) then
                     if menu.get_value(thermal_command) or not aiming then
                         menu.trigger_command(thermal_command,"off")
-                        GRAPHICS._SEETHROUGH_SET_MAX_THICKNESS(1)
+                        GRAPHICS.SEETHROUGH_SET_MAX_THICKNESS(1)
                     else
                         menu.trigger_command(thermal_command,"on")
-                        GRAPHICS._SEETHROUGH_SET_MAX_THICKNESS(50)
+                        GRAPHICS.SEETHROUGH_SET_MAX_THICKNESS(50)
                     end
                 end
             end)
