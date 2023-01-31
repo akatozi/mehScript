@@ -1,4 +1,4 @@
-local version = "0.851"
+local version = "0.852"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -9,7 +9,7 @@ util.require_natives(1672190175)
     local GetOn = function(on) if on then return "on" else return "off" end end
     local InSession = function() return util.is_session_started() and not util.is_session_transition_active() end
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(path)) end
-    local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) else util.toast(path,TOAST_CONSOLE) end end
+    local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) end end
     local ClickPath = function(path) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.trigger_command(path_ref) end end
     local Notify = function(str) if notifications_enabled or update_available then util.toast("[ mehScript ] "..str,TOAST_CONSOLE)if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("= mehScript =\n"..str) end end end
 
@@ -198,8 +198,12 @@ util.require_natives(1672190175)
             ["Friendly"] = "Amabilité",
             ["Hard (Karma)"] = "Enervé (Karma)",
             ["Safe (Detectable)"] = "Sûr (Detectable)",
-            ["Empty Town"] = "Ville Vide",
-            ["Remove traffic and peds around you."] = "Retire le traffic et les piétons autour de vous.",
+            ["Give all collectibles, set to level 240 and give fast run."] = "Donne tous les collectalbes, met niveau 240 et donne le fast run.",
+            ["Max Account"] = "Maxer le Compte",
+            ["'s Account is now Max."] = " a son compte max.",
+            ["Add the date and hour as note to all players in the current session. If used couple time in the same session, players new players will have the same note as the first time you used it.\nNote: Somehow hour may be 10 min off."] = "Ajoute la date et l'heure en Note aux joueurs. Si utilisé plusieurs fois dans la même session, les nouveaux joueurs auront la même Note que la première fois où vous l'avez utilisé.\nNote: Bizarrement l'heure peut être décalée de 10 min.",
+            ["Save All Players"] = "Sauvegarder les Joueurs",
+            ["Failed to load the news message."] = "Impossible de charger le message des actus.",
         }
     }
 
@@ -261,6 +265,13 @@ util.require_natives(1672190175)
 
 	local stand_edition = menu.get_edition()
     local lua_path = "Stand>Lua Scripts>"..string.gsub(string.gsub(SCRIPT_RELPATH,".lua",""),"\\",">")
+
+    async_http.init("raw.githubusercontent.com","/akat0zi/mehScript/main/news_message",function(content)
+        if content ~= "404: Not Found" then
+            Notify(string.gsub(content, "\n$", ""))
+        end
+    end)
+    async_http.dispatch()
 
     local setup = {
         gigachad = {
@@ -529,14 +540,14 @@ util.require_natives(1672190175)
                 drift_assist = on
             end,drift_assist)
 
-            drift:slider(Translate("Counter Steering Angle"),{""},Translate("Your drift angle can't be higher than this value."),30,90,drift_assist_value,1,function(val)
+            drift:slider(Translate("Counter Steering Angle"),{},Translate("Your drift angle can't be higher than this value."),30,90,drift_assist_value,1,function(val)
                 drift_assist_value = val
             end)
 
         -- features
 
             vehicle:toggle(Translate("Launch Control"),{},Translate("Prevents the car from burning when starting to drive away faster."),function(on)
-                PHYSICS._SET_LAUNCH_CONTROL_ENABLED(on)
+                PHYSICS.SET_IN_ARENA_MODE(on)
             end)
     
     --===============--
@@ -694,6 +705,22 @@ util.require_natives(1672190175)
                 end
             end)
 
+            local session_already_saved = false
+            local unix_milliseconds, unix_seconds, date
+            session:action(Translate("Save All Players"),{},Translate("Add the date and hour as note to all players in the current session. If used couple time in the same session, players new players will have the same note as the first time you used it.\nNote: Somehow hour may be 10 min off."),function()
+                if not session_already_saved then
+                    unix_milliseconds = os.time() * 1000 + (os.clock() * 1000)
+                    unix_seconds = math.floor(unix_milliseconds / 1000)
+                    date = os.date("%d/%m/%Y %H:%M", unix_seconds)
+                    session_already_saved = true
+                end
+                for _,pid in pairs(players.list(false)) do
+                    if players.exists(pid) then
+                        menu.trigger_commands("historynote"..players.get_name(pid).." "..date)
+                    end
+                end
+            end)
+
 		-- spoofing
 		
 			local spoofing = online:list(Translate("Spoofing"))
@@ -711,7 +738,6 @@ util.require_natives(1672190175)
 					ClickPath("Online>Spoofing>Name Spoofing>Get Name From Spoofed RID")
 					local rep = 0
 					while players.get_name(players.user()) == previous_name or players.get_name(players.user()) == nil do
-						util.toast(players.get_name(players.user()),TOAST_CONSOLE)
 						if rep >= 5 then
 							rep = 0
 							ClickPath("Online>Spoofing>RID Spoofing>Get Random RID From Player History")
@@ -771,9 +797,9 @@ util.require_natives(1672190175)
         -- features
 
             online:toggle_loop(Translate("Disable RP Gain"),{},Translate("You will not gain any RP."),function()
-                memory.write_float(memory.script_global(262146),0)
+                memory.write_float(memory.script_global(262145 + 1),0)
             end,function()
-                memory.write_float(memory.script_global(262146),1)
+                memory.write_float(memory.script_global(262145 + 1),1)
             end)
 
             local max_health
@@ -796,7 +822,7 @@ util.require_natives(1672190175)
                     menu.trigger_commands("mehspectate"..player_spectate[1].." off")
                 end
             end)
-
+            
     --===============--
     -- Game
     --===============--
@@ -1297,188 +1323,181 @@ util.require_natives(1672190175)
     end
 
     PlayerMenu = function(pid)
-		while not util.is_session_started() do
-			util.yield()
-		end
-        if players.exists(pid) then
-            local player = menu.player_root(pid)
-            local player_name = players.get_name(pid)
-            player:divider("mehScript")
+        local player = menu.player_root(pid)
+        local player_name = players.get_name(pid)
+        player:divider("mehScript")
 
-            -- friendly
+        -- friendly
 
-                local friendly = player:list(Translate("Friendly"))
+            local friendly = player:list(Translate("Friendly"))
 
-                friendly:action(Translate("Max Account"),{},Translate("Give all collectibles, set to level 240 and give fast run."),function()
-                    local level_string = ""
-                    if players.get_rank(pid) < 240 then
-                        menu.trigger_commands("psetrank"..player_name.." 240")
-                        level_string = " and set your level to 240"
-                    end
-                    util.yield(1000)
-                    menu.trigger_commands("givefastrun"..player_name)
-                    util.yield(1000)
-                    menu.trigger_commands("givecollectibles"..player_name)
-                    Notify(player_name.."'s Account is now Max.")
-                    menu.trigger_commands("sendpm"..player_name.." You now have all collectibles, the fast run ability"..level_string..". You need to switch of session to apply the changes.")
-                end)
-
-            -- griefing
-
-                local griefing = player:list(Translate("Griefing"),{},"")
-
-                local bounty = griefing:list(Translate("Bounty"),{},"")
-                local bounty_amount = 10000
-                bounty:toggle_loop(Translate("Auto Bounty"),{""},Translate("Loop that place a bounty on the player."),function()
-                    if InSession() then
-                        if players.get_bounty(pid) ~= bounty_amount then
-                            menu.trigger_commands("bounty"..player_name.." "..bounty_amount)
-                        end
-                    end
-                    util.yield(1000)
-                end)
-
-                bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
-                    bounty_amount = amount
-                end)
-
-                if pid ~= players.user() then
-                    griefing:toggle_loop(Translate("Freeze"),{},Translate("Better than the Stand one."),function()
-                        if players.exists(pid) then
-                            util.trigger_script_event(1 << pid,{0x4868BC31,pid,0,0,0,0,0}) -- credits to jinx
-                            TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
-                            menu.trigger_commands("freeze"..player_name.." on")
-                        end
-                        util.yield()
-                    end,function()
-                        if players.exists(pid) then
-                            menu.trigger_commands("freeze"..player_name.." off")
-                        end
-                    end)
-
-                -- attack
-
-                    local attack = player:list(Translate("Attack"),{},"")
-
-                    local kick = attack:list(Translate("Kick"))
-                    local kick_message = ""
-
-                    kick:action_slider(Translate("Kick Player"),{},"",{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
-                        Notify(Translate("Attempt to Kick ")..player_name)
-                        if kick_message ~= "" then
-                            local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
-                            local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
-                            SetPathVal("Online>Chat>Bypass Character Filter",true)
-                            SetPathVal("Online>Chat>Bypass Profanity Filter",true)
-                            util.yield()
-                            menu.trigger_commands("sendpm"..player_name.." "..kick_message)
-                            util.yield()
-                            SetPathVal("Online>Chat>Bypass Character Filter",bpcharacter_def)
-                            SetPathVal("Online>Chat>Bypass Profanity Filter",bpprofanity_def)
-                        end
-                        util.yield()
-                        Kick(pid, method)
-                    end)
-
-                    GetOrgMembers = function(pid)
-                        local organisation_index = memory.read_int(memory.script_global(1894573 + 1 + (pid * 608) + 10)) -- thanks to MusinessBanager devs for the memory address
-                        local org_members = {}
-                        if organisation_index ~= -1 then
-                            for _,pid2 in pairs(players.list()) do
-                                if memory.read_int(memory.script_global(1894573 + 1 + (pid2 * 608) + 10)) == organisation_index then
-                                    table.insert(org_members,pid2)
-                                end
-                            end
-                        else
-                            table.insert(org_members,pid)
-                        end
-                        return org_members
-                    end
-
-                    kick:action_slider(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
-                        org_members = GetOrgMembers(pid)
-                        if #org_members>1 then
-                            Notify(Translate("Attempt to Kick ")..player_name.."'s"..Translate(" organisation."))
-                        else
-                            Notify(Translate("Attempt to Kick ")..player_name)
-                        end
-                        for _,player_to_kick in pairs(org_members) do
-                            if player_to_kick ~= players.user() then
-                                if kick_message ~= "" then
-                                    local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
-                                    local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
-                                    SetPathVal("Online>Chat>Bypass Character Filter",true)
-                                    SetPathVal("Online>Chat>Bypass Profanity Filter",true)
-                                    util.yield(10)
-                                    menu.trigger_commands("sendpm"..players.get_name(player_to_kick).." "..kick_message)
-                                    util.yield()
-                                    SetPathVal("Online>Chat>Bypass Character Filter",bpcharacter_def)
-                                    SetPathVal("Online>Chat>Bypass Profanity Filter",bpprofanity_def)
-                                end
-                                Kick(player_to_kick, method)
-                            end
-                        end
-                    end)
-
-                    kick:text_input(Translate("Kick Message"),{"mehkickmessage"},Translate("Will send a private chat message to the player when kicking him."),function(str) 
-                        kick_message = str
-                    end)
-
-                    local preset_kick_message_table = {"Stand On Top !","You Suck Buddy ...","Taste the GIGACHAD power !","Can't Beat Kiddion's VIP Menu","10$ Stand>120$ VIP 2TAKE1","A femboy is a slang term for a young, usually cisgender male who displays traditionally feminine characteristics. While the term can be used as an insult, some in the LGBTQ community use the term positively to name forms of gender."}
-                    kick:list_action(Translate("Preset Message"),{},"",preset_kick_message_table,function(i)
-                        menu.trigger_commands("mehkickmessage"..player_name.." "..preset_kick_message_table[i])
-                    end)
-
-                    local crash = attack:list(Translate("Crash"))
-
-                    crash:action(Translate("Crash Player"),{},"",function()
-                        Notify(Translate("Attempt to Crash ")..player_name)
-                        Crash(pid, player_name)
-                    end)
-
-                    crash:action(Translate("Crash Organisation"),{},Translate("Crash all organisation members."),function()
-                        org_members = GetOrgMembers(pid)
-                        if #org_members>1 then
-                            Notify(Translate("Attempt to Crash ")..player_name..Translate(" organisation."))
-                        else
-                            Notify(Translate("Attempt to Crash ")..player_name)
-                        end
-                        for _,player_to_crash in pairs(org_members) do
-                            if player_to_crash ~= players.user() then
-                                Crash(player_to_crash, players.get_name(player_to_crash))
-                            end
-                        end
-                    end)
-
-                    attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him.\nNote: You may be karma."),function()
-                        Notify(Translate("Nuke on ")..player_name)
-                        Crash(pid, player_name)
-                        util.yield(2000)
-                        if players.get_name(pid) == player_name then
-                            Kick(pid)
-                        end
-                    end)
-
-                    add_block_join_reaction = false
-                    attack:toggle(Translate("Add Block Join Reaction"),{},Translate("When removing the player, it'll add him the block join reaction so he will never join you again."),function(on)
-                        menu.get_state(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")))
-                    end)
-
-                    player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
-                        if on then
-                            if #player_spectate ~= 0 then
-                                menu.trigger_commands("mehspectate"..player_spectate[1].." off")
-                            end
-                            table.insert(player_spectate,player_name)
-                            menu.trigger_commands("spectate"..player_name.." on")
-                        else
-                            if players.exists(pid) then
-                                menu.trigger_commands("spectate"..player_spectate[1].." off")
-                            end
-                            table.remove(player_spectate,1)
-                        end
-                    end)
+            friendly:action(Translate("Max Account"),{},Translate("Give all collectibles, set to level 240 and give fast run."),function()
+                local level_string = ""
+                if players.get_rank(pid) < 240 then
+                    menu.trigger_commands("psetrank"..player_name.." 240")
+                    level_string = " and set your level to 240"
                 end
+                util.yield(1000)
+                menu.trigger_commands("givefastrun"..player_name)
+                util.yield(1000)
+                menu.trigger_commands("givecollectibles"..player_name)
+                Notify(player_name..Translate("'s Account is now Max."))
+                menu.trigger_commands("sendpm"..player_name.." You now have all collectibles, the fast run ability"..level_string..". You need to switch of session to apply the changes.")
+            end)
+
+        -- griefing
+
+            local griefing = player:list(Translate("Griefing"),{},"")
+
+            local bounty = griefing:list(Translate("Bounty"),{},"")
+            local bounty_amount = 10000
+            bounty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop that place a bounty on the player."),function()
+                if InSession() then
+                    if players.get_bounty(pid) ~= bounty_amount then
+                        menu.trigger_commands("bounty"..player_name.." "..bounty_amount)
+                    end
+                end
+                util.yield(1000)
+            end)
+
+            bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+                bounty_amount = amount
+            end)
+
+            if pid ~= players.user() then
+                griefing:toggle_loop(Translate("Freeze"),{},Translate("Better than the Stand one."),function()
+                    if players.exists(pid) then
+                        util.trigger_script_event(1 << pid,{0x4868BC31,pid,0,0,0,0,0}) -- credits to jinx
+                        TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+                        menu.trigger_commands("freeze"..player_name.." on")
+                    end
+                    util.yield()
+                end,function()
+                    if players.exists(pid) then
+                        menu.trigger_commands("freeze"..player_name.." off")
+                    end
+                end)
+
+            -- attack
+
+                local attack = player:list(Translate("Attack"),{},"")
+
+                local kick = attack:list(Translate("Kick"))
+                local kick_message = ""
+
+                kick:action_slider(Translate("Kick Player"),{},"",{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
+                    Notify(Translate("Attempt to Kick ")..player_name)
+                    if kick_message ~= "" then
+                        ClickPath("Online>Chat>Bypass Character Filter>Enabled")
+                        ClickPath("Online>Chat>Bypass Profanity Filter>Enabled")
+                        util.yield()
+                        menu.trigger_commands("sendpm"..player_name.." "..kick_message)
+                        util.yield()
+                        ClickPath("Online>Chat>Bypass Character Filter>Disabled")
+                        ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
+                    end
+                    util.yield()
+                    Kick(pid, method)
+                end)
+
+                GetOrgMembers = function(pid)
+                    local organisation_index = memory.read_int(memory.script_global(1894573 + 1 + (pid * 608) + 10)) -- thanks to MusinessBanager devs for the memory address
+                    local org_members = {}
+                    if organisation_index ~= -1 then
+                        for _,pid2 in pairs(players.list()) do
+                            if memory.read_int(memory.script_global(1894573 + 1 + (pid2 * 608) + 10)) == organisation_index then
+                                table.insert(org_members,pid2)
+                            end
+                        end
+                    else
+                        table.insert(org_members,pid)
+                    end
+                    return org_members
+                end
+
+                kick:action_slider(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
+                    org_members = GetOrgMembers(pid)
+                    if #org_members>1 then
+                        Notify(Translate("Attempt to Kick ")..player_name.."'s"..Translate(" organisation."))
+                    else
+                        Notify(Translate("Attempt to Kick ")..player_name)
+                    end
+                    for _,player_to_kick in pairs(org_members) do
+                        if player_to_kick ~= players.user() then
+                            if kick_message ~= "" then
+                                local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
+                                local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
+                                SetPathVal("Online>Chat>Bypass Character Filter",true)
+                                SetPathVal("Online>Chat>Bypass Profanity Filter",true)
+                                util.yield(10)
+                                menu.trigger_commands("sendpm"..players.get_name(player_to_kick).." "..kick_message)
+                                util.yield()
+                                SetPathVal("Online>Chat>Bypass Character Filter",bpcharacter_def)
+                                SetPathVal("Online>Chat>Bypass Profanity Filter",bpprofanity_def)
+                            end
+                            Kick(player_to_kick, method)
+                        end
+                    end
+                end)
+
+                kick:text_input(Translate("Kick Message"),{"mehkickmessage"},Translate("Will send a private chat message to the player when kicking him."),function(str) 
+                    kick_message = str
+                end)
+
+                local preset_kick_message_table = {"Stand On Top !","You Suck Buddy ...","Taste the GIGACHAD power !","Can't Beat Kiddion's VIP Menu","10$ Stand>120$ VIP 2TAKE1","A femboy is a slang term for a young, usually cisgender male who displays traditionally feminine characteristics. While the term can be used as an insult, some in the LGBTQ community use the term positively to name forms of gender."}
+                kick:list_action(Translate("Preset Message"),{},"",preset_kick_message_table,function(i)
+                    menu.trigger_commands("mehkickmessage"..player_name.." "..preset_kick_message_table[i])
+                end)
+
+                local crash = attack:list(Translate("Crash"))
+
+                crash:action(Translate("Crash Player"),{},"",function()
+                    Notify(Translate("Attempt to Crash ")..player_name)
+                    Crash(pid, player_name)
+                end)
+
+                crash:action(Translate("Crash Organisation"),{},Translate("Crash all organisation members."),function()
+                    org_members = GetOrgMembers(pid)
+                    if #org_members>1 then
+                        Notify(Translate("Attempt to Crash ")..player_name..Translate(" organisation."))
+                    else
+                        Notify(Translate("Attempt to Crash ")..player_name)
+                    end
+                    for _,player_to_crash in pairs(org_members) do
+                        if player_to_crash ~= players.user() then
+                            Crash(player_to_crash, players.get_name(player_to_crash))
+                        end
+                    end
+                end)
+
+                attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him.\nNote: You may be karma."),function()
+                    Notify(Translate("Nuke on ")..player_name)
+                    Crash(pid, player_name)
+                    util.yield(2000)
+                    if players.get_name(pid) == player_name then
+                        Kick(pid)
+                    end
+                end)
+
+                add_block_join_reaction = false
+                attack:toggle(Translate("Add Block Join Reaction"),{},Translate("When removing the player, it'll add him the block join reaction so he will never join you again."),function(on)
+                    menu.get_state(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")))
+                end)
+
+                player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
+                    if on then
+                        if #player_spectate ~= 0 then
+                            menu.trigger_commands("mehspectate"..player_spectate[1].." off")
+                        end
+                        table.insert(player_spectate,player_name)
+                        menu.trigger_commands("spectate"..player_name.." on")
+                    else
+                        if players.exists(pid) then
+                            menu.trigger_commands("spectate"..player_spectate[1].." off")
+                        end
+                        table.remove(player_spectate,1)
+                    end
+                end)
             end
     end
 	
