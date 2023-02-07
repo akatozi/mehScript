@@ -1,21 +1,23 @@
 # Changelog
 
-## Update 0.86
+## Update 0.87
 
 ### Self
-- Added Auto BST
-- Added Invisible to Thermal Scope
-- Added Dead Silence
-### Protections
-- Improved readability
-### Profiles
-- ✨ Added Profile Editor ✨
-- Renamed Setup to Profiles
-- Improved readability
-### Game
-- Renamed / Improved Auto Accept Transaction Error to Auto Accept Warning
+- **Weapons**
+  - **Aimbot**
+    - Improved Aimbot so shot seems legit
+    - Added Area to Shoot ( Head, Spine, Pelvis + Random )
+    - Added Shoot Through Walls
+    - Added ESP When Behind Walls
+    - Added NPCS Target
+  - Removed Invisible to Thermal Scope cause local only
+### Online 
+- **Session**
+  - Become Host is now very efficient and safe
 ### Player
-- Fixed / Improved Add Block Join Reaction
-### Other
-- Added News Message
-- Moved Protections and Profiles to main menu
+- **Attack**
+  - Kick Safe Kick is now really safe
+### Game
+- Improved Auto Accept Warning
+### Profiles
+- Improved / Fixed Profile Editor
