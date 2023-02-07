@@ -1,4 +1,4 @@
-local version = "0.86"
+local version = "0.87"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -11,7 +11,7 @@ util.require_natives(1672190175)
     local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(path)) end
     local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) end end
     local ClickPath = function(path) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.trigger_command(path_ref) end end
-    local Notify = function(str,translate=true) if notifications_enabled or update_available then if translate then str = Translate(str) end util.toast("> mehScript "..str,TOAST_CONSOLE) if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("> mehScript \n"..str) end end end
+    local Notify = function(str,translate=true) if notifications_enabled or update_available then if translate then str = Translate(str) end if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("> mehScript \n"..str) end end end
 
 --===============--
 -- Translation
@@ -51,9 +51,9 @@ util.require_natives(1672190175)
             ["Attack"] = "Attaquer",
             ["Kick"] = "Exclure",
             ["Kick Player"] = "Exclure le Joueur",
-            ["Attempt to Kick "] = "Essai d'éjecter ",
+            ["Attempt to kick "] = "Essai d'éjecter ",
             ["Crash"] = "Crash",
-            ["Attempt to Crash "] = "Essai de crash ",
+            ["Attempt to crash "] = "Essai de crash ",
             ["Nuke Button"] = "Boutton Nucléaire",
             ["Nuke on "] = "Suppression de ",
             ["Spectate"] = "Observer",
@@ -118,7 +118,7 @@ util.require_natives(1672190175)
             ["A body armor will be applied automatically when respawning."] = "Une protection sera appliqué automatiquement lors de la réapparition.",
             ["Keep your ped dry and clean."] = "Garde le personnage sec et propre.",
             ["Display on the radar invisible players."] = "Affiche les joueurs invisibles sur le radar.",
-            ["Spoof your session informations so nobody can join you from your R* profiles."] = "Masque les informations de la session pour empêcher les gens de vous rejoindre depuis votre profil R*.",
+            ["Spoof your session informations so nobody can join you from your R* profile."] = "Masque les informations de la session pour empêcher les gens de vous rejoindre depuis votre profil R*.",
             ["You will not gain any RP."] = "Tu ne gagneras plus de RP.",
             ["Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."] = "Devient invisible sur le radar sans avertir les autres joueurs.\nNote: Déclenche la détection de Vie Modder.",
             ["Automatically skip all conversations."] = "Passe automatiquement les dialogues.",
@@ -161,7 +161,7 @@ util.require_natives(1672190175)
             ["Reason: Tryhard K/D"] = "Raison: Ratio de Tryhard",
             ["Warning: You are about to kick around"] = "Attention: Tu es va exclure environ",
             ["players until you become host. Are you sure ?"] = "joueurs pour être l'hôte. Es-tu sûr ?",
-            ["You Are Host."] = "Tu Es Hôte.",
+            ["You are host."] = "Tu es hôte.",
             ["Kick players until you become host."] = "Exclu des joueurs jusqu'à que tu sois hôte.",
             ["Become Host"] = "Devenir Hôte",
             ["Become Script Host"] = "Devenir Hôte de Script",
@@ -224,6 +224,23 @@ util.require_natives(1672190175)
             ["Save Profile"] = "Sauvegarder Profil",
             ["Load Profile"] = "Charger Profil",
             [" profile loaded !"] = " profil chargé !",
+            ["This player left the session."] = "Le joueur a quitté la session.",
+            ["Session timeout."] = "Délai dépassé.",
+            ["High value may result in focusing wrong target."] = "Des valeurs élevées peuvent cibler la mauvaise cible.",
+            ["Area to Shoot"] = "Zones à Toucher",
+            ["If you select several options, it will chose one randomly everytime you shoot."] = "Si plusieurs options sont sélectionnées, à chaque tir une zone au hasard sera choisis.",
+            ["Head"] = "Tête",
+            ["Chest"] = "Torse",
+            ["Pelvis"] = "Bassin",
+            ["Through Walls Settings"] = "Options à Travers le Mur",
+            ["Shoot Through Walls"] = "Tirer à Traver le Mur",
+            ["ESP When Behind Walls"] = "ESP Quand Derrière un Mur",
+            ["Works only if Shoot Through Walls is enabled."] = "Fonctionne seulement si Tirer à Traver le Mur est activé.",
+            ["Aimbot : No area selected !"] = "Aimbot : Pas de zone sélectionnée !",
+            ["Players"] = "Joueurs",
+            ["NPCS"] = "PNJ",
+            ["You are already in the session."] = "Vous êtes déjà dans la session.",
+            ["Should take less than 10 sec !"] = "Ca devrait prendre moins de 10 sec !",
         }
     }
 
@@ -364,7 +381,7 @@ util.require_natives(1672190175)
 
             local aimbot = weaponm:list(Translate("Aimbot"))
 
-                -- Aimbot part is Lance's code from LanceScript Reloaded
+                -- Original made by Lance but improved a lot by myself
                 handle_ptr = memory.alloc(13*8)
                 local function pid_to_handle(pid)
                     NETWORK.NETWORK_HANDLE_FROM_PLAYER(pid, handle_ptr, 13)
@@ -372,95 +389,206 @@ util.require_natives(1672190175)
                 end
 
                 local function get_aimbot_target()
-                    local dist = 1000000000
                     local cur_tar = 0
                     for k,v in pairs(entities.get_all_peds_as_handles()) do
                         local target_this = true
                         local player_pos = players.get_position(players.user())
                         local ped_pos = ENTITY.GET_ENTITY_COORDS(v, true)
-                        local this_dist = MISC.GET_DISTANCE_BETWEEN_COORDS(player_pos['x'], player_pos['y'], player_pos['z'], ped_pos['x'], ped_pos['y'], ped_pos['z'], true)
                         if players.user_ped() ~= v and not ENTITY.IS_ENTITY_DEAD(v) then
-                            if not ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), v, 17) then
-                                target_this = false
-                            end
-                            if not PED.IS_PED_A_PLAYER(v) or not PED.IS_PED_FACING_PED(players.user_ped(), v, aimbot_fov) then
-                                target_this = false
-                            end
-                            if not aimbot_target_vehicle then
-                                if PED.IS_PED_IN_ANY_VEHICLE(v, true) then 
+                            if MISC.GET_DISTANCE_BETWEEN_COORDS(player_pos.x, player_pos.y, player_pos.z, ped_pos.x, ped_pos.y, ped_pos.z, true) <= 1500 then
+                                if not PED.IS_PED_FACING_PED(players.user_ped(), v, aimbot_fov) then
                                     target_this = false
-                                end
-                            end
-                            if not aimbot_target_godmode then
-                                if not ENTITY.GET_ENTITY_CAN_BE_DAMAGED(v) then 
-                                    target_this = false 
-                                end
-                            end
-                            if not aimbot_target_friends then
-                                if PED.IS_PED_A_PLAYER(v) then
-                                    local hdl = pid_to_handle(NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(v))
-                                    if NETWORK.NETWORK_IS_FRIEND(hdl) then
-                                        target_this = false 
+                                    if aimbot_esp_behind_walls then
+                                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
+                                    end
+                                else 
+                                    if not aimbot_target_peds then
+                                        if not PED.IS_PED_A_PLAYER(v) then
+                                            target_this = false
+                                        end
+                                    end
+                                    if not aimbot_target_players then
+                                        if PED.IS_PED_A_PLAYER(v) then
+                                            target_this = false
+                                        end
+                                    end
+                                    if not aimbot_target_vehicle then
+                                        if PED.IS_PED_IN_ANY_VEHICLE(v, true) then 
+                                            target_this = false
+                                        end
+                                    end
+                                    if not aimbot_target_godmode then
+                                        if not ENTITY.GET_ENTITY_CAN_BE_DAMAGED(v) then 
+                                            target_this = false 
+                                        end
+                                    end
+                                    if not aimbot_target_friends then
+                                        if PED.IS_PED_A_PLAYER(v) then
+                                            local hdl = pid_to_handle(NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(v))
+                                            if NETWORK.NETWORK_IS_FRIEND(hdl) then
+                                                target_this = false 
+                                            end
+                                        end
+                                    end
+                                    if not aimbot_shoot_walls then
+                                        if not ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), v, 17) then
+                                            target_this = false
+                                        end
+                                    end
+                                    if target_this then
+                                        cur_tar = v
+                                        if aimbot_esp_behind_walls and aimbot_shoot_walls and not ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), v, 17) then
+                                            if not PED.IS_PED_A_PLAYER(v) then
+                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Low Latency Rendering"))
+                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
+                                            else
+                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Low Latency Rendering"))
+                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                                            end
+                                        else
+                                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
+                                        end
                                     end
                                 end
-                            end
-                            if this_dist <= dist then
-                                if target_this then
-                                    dist = this_dist
-                                    cur_tar = v
-                                end
+                            elseif aimbot_esp_behind_walls then
+                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Low Latency Rendering"))
+                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
                             end
                         end
                     end
                     return cur_tar
                 end
-                
-                aimbot_show_taget = true
-                aimbot:toggle_loop(Translate("Aimbot"), {}, "", function(toggle)
+
+                local aimbot_area_selected = {}
+                aimbot:toggle_loop(Translate("Aimbot"),{},"", function()
                     local target = get_aimbot_target()
                     if target ~= 0 then
-                        local t_pos = PED.GET_PED_BONE_COORDS(target, 31086, 0.01, 0, 0)
-                        local t_pos2 = PED.GET_PED_BONE_COORDS(target, 31086, -0.01, 0, 0.00)
+                        local aimbot_selected_area = aimbot_area_selected[math.random(#aimbot_area_selected)]
+                        local target_pos = PED.GET_PED_BONE_COORDS(target, aimbot_selected_area, 0, 0, 0)
                         if aimbot_show_taget then
-                            GRAPHICS.DRAW_MARKER(0, t_pos['x'], t_pos['y'], t_pos['z']+2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 1, 1, 255, 0, 255, 100, false, true, 2, false, 0, 0, false)
+                            local ped_pos = PED.GET_PED_BONE_COORDS(target, 31086, 0, 0, 0)
+                            GRAPHICS.DRAW_MARKER(0, ped_pos.x, ped_pos.y, ped_pos.z + 1.5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 255, 0, 0, 100, false, true, 2, false, 0, 0, false)
                         end
                         if PED.IS_PED_SHOOTING(players.user_ped()) then
-                            local wep = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
-                            local dmg = WEAPON.GET_WEAPON_DAMAGE(wep, 0) * (aimbot_damage/100)
-                            local veh = PED.GET_VEHICLE_PED_IS_IN(target, false)
-                            MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(t_pos['x'], t_pos['y'], t_pos['z'], t_pos2['x'], t_pos2['y'], t_pos2['z'], dmg, true, wep, players.user_ped(), true, false, 10000, veh)
+                            if aimbot_selected_area then
+                                local shot_pos
+                                if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), target, 17) then
+                                    shot_pos = PED.GET_PED_BONE_COORDS(players.user_ped(), 57005, -0.01, 0, 0)
+                                else
+                                    shot_pos = PED.GET_PED_BONE_COORDS(target, aimbot_selected_area, -0.1, 0, 0)
+                                end
+                                local wep = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
+                                MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(shot_pos.x, shot_pos.y, shot_pos.z, target_pos.x, target_pos.y, target_pos.z, WEAPON.GET_WEAPON_DAMAGE(wep, 0) * (aimbot_damage/100), true, wep, players.user_ped(), false, false, 10000, PED.GET_VEHICLE_PED_IS_IN(target, false))
+                            else
+                                Notify("Aimbot : No area selected !")
+                            end
                         end
+                    end
+                end, function()
+                    if aimbot_esp_behind_walls then
+                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
                     end
                 end)
                 
-                aimbot_fov = 60
-                aimbot:slider(Translate("FOV"), {"mehaimbotfov"}, "", 1, 270, 60, 1, function(s)
+                aimbot_fov = 10
+                aimbot:slider(Translate("FOV"), {"mehaimbotfov"}, Translate("High value may result in focusing wrong target."), 1, 180, aimbot_fov, 1, function(s)
                     aimbot_fov = s
                 end)
-                
+
                 aimbot_damage = 100
-                aimbot:slider(Translate("Weapon Damage %"), {"mehaimbotdamage"}, "", 1, 1000, 100, 1, function(s)
+                aimbot:slider(Translate("Weapon Damage %"), {"mehaimbotdamage"}, "", 1, 1000, aimbot_damage, 1, function(s)
                     aimbot_damage = s
                 end)
+
+                aimbot_area = aimbot:list(Translate("Area to Shoot"))
+
+                    aimbot_remove_area = function(boneID)
+                        for i, v in ipairs(aimbot_area_selected) do
+                            if v == boneID then
+                                table.remove(aimbot_area_selected, i)
+                                break
+                            end
+                        end
+                    end
+
+                    table.insert(aimbot_area_selected, 31086)
+                    local aimbot_area_message = Translate("If you select several options, it will chose one randomly everytime you shoot.")
+                    aimbot_area:toggle(Translate("Head"),{},aimbot_area_message,function(on)
+                        if on then
+                            table.insert(aimbot_area_selected, 31086)
+                        else
+                            aimbot_remove_area(31086)
+                        end
+                    end, true)
+
+                    aimbot_area:toggle(Translate("Chest"),{},aimbot_area_message,function(on)
+                        if on then
+                            table.insert(aimbot_area_selected, 24818)
+                        else
+                            aimbot_remove_area(24818)
+                        end
+                    end)
+
+                    aimbot_area:toggle(Translate("Pelvis"),{},aimbot_area_message,function(on)
+                        if on then
+                            table.insert(aimbot_area_selected, 11816)
+                        else
+                            aimbot_remove_area(11816)
+                        end
+                    end)
+
+                aimbot_through_walls = aimbot:list(Translate("Through Walls Settings"))
+                    aimbot_through_walls:toggle(Translate("Shoot Through Walls"),{},"", function(on)
+                        aimbot_shoot_walls = on
+                        if not on and aimbot_esp_behind_walls then
+                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
+                        end
+                    end)
+
+                    if stand_edition >= 2 then
+                        aimbot_through_walls:toggle(Translate("ESP When Behind Walls"),{},Translate("Works only if Shoot Through Walls is enabled."), function(on)
+                            aimbot_esp_behind_walls = on
+                            if not on then
+                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
+                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
+                            end
+                        end)
+                    end
                 
-                aimbot:divider(Translate("Target Settings"))
-                aimbot:toggle(Translate("Inside Vehicle"), {}, "", function(on)
-                    aimbot_target_vehicle = on
-                end)
-                
-                aimbot_target_godmode = true
-                aimbot:toggle(Translate("Godmode Player"), {}, "", function(on)
-                    aimbot_target_godmode = on
-                end, true)
-                
-                aimbot_target_friends = false
-                aimbot:toggle(Translate("Friends"), {}, "", function(on)
-                    aimbot_target_friends = on
-                end)
-                
-                aimbot:toggle(Translate("Display Target"), {}, "", function(on)
-                    aimbot_show_taget = on
-                end, true)
+                aimbot_taget_settings = aimbot:list(Translate("Target Settings"))
+
+                    aimbot_target_players = true
+                    aimbot_taget_settings:toggle(Translate("Players"),{},"", function(on)
+                        aimbot_target_players = on
+                    end, true)
+
+                    aimbot_taget_settings:toggle(Translate("NPCS"),{},"", function(on)
+                        aimbot_target_peds = on
+                    end)
+
+                    aimbot_target_vehicle = true
+                    aimbot_taget_settings:toggle(Translate("Inside Vehicle"),{},"", function(on)
+                        aimbot_target_vehicle = on
+                    end, true)
+        
+                    aimbot_target_godmode = true
+                    aimbot_taget_settings:toggle(Translate("Godmode Player"),{},"", function(on)
+                        aimbot_target_godmode = on
+                    end, true)
+                    
+                    aimbot_target_friends = true
+                    aimbot_taget_settings:toggle(Translate("Friends"),{},"", function(on)
+                        aimbot_target_friends = on
+                    end, true)
+                    
+                    aimbot_show_taget = true
+                    aimbot_taget_settings:toggle(Translate("Display Target"),{},"", function(on)
+                        aimbot_show_taget = on
+                    end, true)
 
             local thermal_command = menu.ref_by_path('Game>Rendering>Thermal Vision')
             weaponm:toggle_loop(Translate("Thermal Scope"),{},Translate("Press E while aiming to activate."),function()
@@ -509,14 +637,6 @@ util.require_natives(1672190175)
                 menu.trigger_commands("noblood "..on)
                 menu.trigger_commands("wetness 0")
             end))
-
-            invisible_to_thermal = self:toggle(Translate("Invisible to Thermal Scope"),{},"",function(on)
-                if on then
-                    PED.SET_PED_HEATSCALE_OVERRIDE(players.user_ped(), 0)
-                else
-                    PED.SET_PED_HEATSCALE_OVERRIDE(players.user_ped(), 1)
-                end
-            end)
 
             auto_bst = self:toggle_loop(Translate("Smart BST"),{},Translate("Auto enable BST when you have weapon in hands."),function()
                 local on = GetOn(WEAPON.IS_PED_ARMED(players.user_ped(),7))
@@ -647,19 +767,19 @@ util.require_natives(1672190175)
                     end
                     if (char_count / #name) >= 0.8 then
                         if notifications_enabled then
-                            Notify(Translate("Attempt to Kick ")..name.."\n"..Translate("Reason: Tryhard Name"),false)
+                            Notify(Translate("Attempt to kick ")..name.."\n"..Translate("Reason: Tryhard Name"),false)
                         end
                         while players.exists(pid) do
-                            Kick(pid)
+                            Kick(pid, 2)
                             util.yield(4000)
                         end
                         return
                     elseif players.get_kd(pid) >= 4 then
                         if notifications_enabled then
-                            Notify(Translate("Attempt to Kick ")..name.."\n"..Translate("Reason: Tryhard K/D").." ("..players.get_kd(pid)..")",false)
+                            Notify(Translate("Attempt to kick ")..name.."\n"..Translate("Reason: Tryhard K/D").." ("..players.get_kd(pid)..")",false)
                         end
                         while players.exists(pid) do
-                            Kick(pid)
+                            Kick(pid, 2)
                             util.yield(4000)
                         end
                         return
@@ -674,7 +794,20 @@ util.require_natives(1672190175)
                         menu.trigger_commands("historyblock"..name.." on")
                         Notify(Translate("Block Join Reaction Added to ")..name..".",false)
                     end
+                    if players.get_host() == pid then
+                        menu.trigger_commands("ban"..players.get_name(pid))
+                    end
                     if method == 1 then
+                        if kick_message then
+                            ClickPath("Online>Chat>Bypass Character Filter>Enabled")
+                            ClickPath("Online>Chat>Bypass Profanity Filter>Enabled")
+                            util.yield()
+                            menu.trigger_commands("sendpm"..name.." "..kick_message)
+                            util.yield()
+                            ClickPath("Online>Chat>Bypass Character Filter>Disabled")
+                            ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
+                        end
+                        util.yield()
                         menu.trigger_commands("buttplug"..name)
                         util.yield(200)
                         if players.exists(pid) and players.get_name(pid) == name then
@@ -682,7 +815,17 @@ util.require_natives(1672190175)
                         end
                     elseif method == 2 then
                         menu.trigger_commands("loveletterkick"..name)
-                        util.yield(500)
+                        util.yield(7000)
+                        if kick_message then
+                            ClickPath("Online>Chat>Bypass Character Filter>Enabled")
+                            ClickPath("Online>Chat>Bypass Profanity Filter>Enabled")
+                            util.yield()
+                            menu.trigger_commands("sendpm"..name.." "..kick_message)
+                            util.yield()
+                            ClickPath("Online>Chat>Bypass Character Filter>Disabled")
+                            ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
+                        end
+                        util.yield(5000)
                         if players.exists(pid) and players.get_name(pid) == name then
                             menu.trigger_commands("ban"..name)
                         end
@@ -728,14 +871,17 @@ util.require_natives(1672190175)
                         menu.show_warning(become_host, type, Translate("Warning: You are about to kick around").." "..players_before_host.." "..Translate("players until you become host. Are you sure ?"), function()
                             if InSession() then
                                 while players.get_host() ~= players.user() do
-                                    Kick(players.get_host(),2)
+                                    local host = players.get_host()
+                                    if players.exists(host) then
+                                        menu.trigger_commands("ban"..players.get_name(host))
+                                    end
                                     util.yield(50)
                                 end
-                                Notify("You Are Host.")
+                                Notify("You are host.")
                             end
                         end)
                     else
-                        Notify("You Are Host.")
+                        Notify("You are host.")
                     end
                 end
             end)
@@ -866,8 +1012,20 @@ util.require_natives(1672190175)
 
             game:toggle_loop(Translate("Auto Accept Warning"),{},"",function()
                 local mess_hash = HUD.GET_WARNING_SCREEN_MESSAGE_HASH()
-                if mess_hash == -991495373 or mess_hash == 15890625 then -- transaction error / joining warning
+                if mess_hash == -896436592 then
+                    Notify("This player left the session.")
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
+                elseif mess_hash == 1575023314 then
+                    Notify("Session timeout.")
+                    PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
+                elseif mess_hash == 1446064540 then
+                    Notify("You are already in the session.")
+                    PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
+                --          transaction error              join session             join session            leave session           leave online
+                elseif mess_hash == -991495373 or mess_hash == -587688989 or mess_hash == 15890625 or mess_hash == 99184332 or mess_hash == 1246147334 then
+                    PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
+                elseif mess_hash ~= 0 then
+                    util.toast(mess_hash, TOAST_CONSOLE)
                 end
                 util.yield()
             end)
@@ -1067,13 +1225,13 @@ util.require_natives(1672190175)
         protection:toggle(Translate("Log"),{},"",function(on)
             util.yield()
             protections_log = on
-        end,true)
+        end, true)
 
         protections_notification = true
         protection:toggle(Translate("Notifications"),{},"",function(on)
             util.yield()
             protections_notification = on
-        end,true)
+        end, true)
 
     --===============--
     -- Profile
@@ -1100,7 +1258,6 @@ util.require_natives(1672190175)
                     SetPathVal(path,true)
                 end
                 menu.trigger_command(regen_all)
-                menu.set_value(invisible_to_thermal,true)
                 menu.set_value(auto_bst,true)
             end
         end
@@ -1341,6 +1498,7 @@ util.require_natives(1672190175)
             DisplayProfilesFeatures = function(state)
                 menu.set_visible(save_profile, state)
                 if not state then
+                    menu.trigger_command(save_profile_input, "")
                     custom_profile_features = nil
                     menu.set_menu_name(save_profile_features, Translate("Features From : ").."None")
                     custom_profile_appearance = nil
@@ -1374,33 +1532,36 @@ util.require_natives(1672190175)
             save_profile_features = save_profile:action(Translate("Features From : ").."None",{},"",function() end)
             save_profile_appearance = save_profile:action(Translate("Appearance From : ").."None",{},"",function() end)
             save_profile_lua = save_profile:action(Translate("Lua Settings From : ").."None",{},"",function() end)
-            save_profile_input = save_profile:text_input(Translate("Save Custom Profile"),{"mehscriptsaveprofile"},"",function(input)
-                if not custom_profile_running then
-                    custom_profile_running = true
-                    menu.trigger_commands("newprofile "..input)
-                    util.yield(1000)
-                    io.remove(profiles_dir.."\\"..input..".txt")
-                    local custom_profile = io.open(profiles_dir.."\\"..input..".txt", "w")
-                    if not custom_profile_features then
-                        custom_profile_features = "Finished Tutorial: Yes\n"
-                    end
-                    if not custom_profile_appearance then
-                        custom_profile_appearance = ""
-                        if custom_profile_lua then
-                            custom_profile_appearance = "Stand\n\t"
+            save_profile_input = save_profile:text_input(Translate("Save Custom Profile"),{"mehscriptsaveprofile"},"",function(profile_name)
+                util.yield()
+                if profile_name and profile_name ~= "" then
+                    if not custom_profile_running then
+                        custom_profile_running = true
+                        menu.trigger_commands("newprofile "..profile_name)
+                        util.yield(1000)
+                        io.remove(profiles_dir.."\\"..profile_name..".txt")
+                        local custom_profile = io.open(profiles_dir.."\\"..profile_name..".txt", "w")
+                        if not custom_profile_features then
+                            custom_profile_features = "Finished Tutorial: Yes\n"
                         end
+                        if not custom_profile_appearance then
+                            custom_profile_appearance = ""
+                            if custom_profile_lua then
+                                custom_profile_appearance = "Stand\n\t"
+                            end
+                        end
+                        if not custom_profile_lua then
+                            custom_profile_lua = ""
+                        end
+                        custom_profile:write(custom_profile_features..custom_profile_appearance..custom_profile_lua)
+                        custom_profile:close()
+                        Notify(profile_name..Translate(" profile saved !"),false)
+                        RefreshProfiles()
+                        menu.focus(profile_refresh_button)
+                        custom_profile_running = false
+                    else
+                        Notify("Program is running wait a few seconds then retry.")
                     end
-                    if not custom_profile_lua then
-                        custom_profile_lua = ""
-                    end
-                    custom_profile:write(custom_profile_features..custom_profile_appearance..custom_profile_lua)
-                    custom_profile:close()
-                    Notify(input..Translate(" profile saved !"),false)
-                    RefreshProfiles()
-                    menu.focus(profile_refresh_button)
-                    custom_profile_running = false
-                else
-                    Notify("Program is running wait a few seconds then retry.")
                 end
             end)
             
@@ -1439,14 +1600,11 @@ util.require_natives(1672190175)
                 notifications_mode = selected_mode
             end)
 
+            notifications_enabled = true
             notifications_toggle = misc:toggle(Translate("Notifications"),{},"",function(on)
                 util.yield()
                 notifications_enabled = on
-            end,true)
-
-            if menu.get_value(notifications_toggle) then
-                notifications_enabled = true
-            end
+            end, true)
 
         -- about
 
@@ -1544,21 +1702,15 @@ util.require_natives(1672190175)
             local attack = player:list(Translate("Attack"),{},"")
 
             local kick = attack:list(Translate("Kick"))
-            local kick_message = ""
 
             kick:action_slider(Translate("Kick Player"),{},"",{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
-                Notify(Translate("Attempt to Kick ")..player_name,false)
-                if kick_message ~= "" then
-                    ClickPath("Online>Chat>Bypass Character Filter>Enabled")
-                    ClickPath("Online>Chat>Bypass Profanity Filter>Enabled")
-                    util.yield()
-                    menu.trigger_commands("sendpm"..player_name.." "..kick_message)
-                    util.yield()
-                    ClickPath("Online>Chat>Bypass Character Filter>Disabled")
-                    ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
+                if method == 1 then
+                    Notify(Translate("Attempt to kick ")..player_name,false)
+                    Kick(pid, 1)
+                else
+                    Notify(Translate("Attempt to kick ")..player_name.."\n"..Translate("Should take less then 10 sec !"),false)
+                    Kick(pid, 2)
                 end
-                util.yield()
-                Kick(pid, method)
             end)
 
             GetOrgMembers = function(pid)
@@ -1579,9 +1731,9 @@ util.require_natives(1672190175)
             kick:action_slider(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
                 org_members = GetOrgMembers(pid)
                 if #org_members>1 then
-                    Notify(Translate("Attempt to Kick ")..player_name.."'s"..Translate(" organisation."),false)
+                    Notify(Translate("Attempt to kick ")..player_name.."'s"..Translate(" organisation."),false)
                 else
-                    Notify(Translate("Attempt to Kick ")..player_name,false)
+                    Notify(Translate("Attempt to kick ")..player_name,false)
                 end
                 local add_block_join_reaction = menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")))
                 for _,player_to_kick in pairs(org_members) do
@@ -1590,16 +1742,8 @@ util.require_natives(1672190175)
                             menu.set_value(menu.ref_by_path("Players>"..players.get_name_with_tags(player_to_kick)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")),add_block_join_reaction)
                         end
                         util.yield(10)
-                        if kick_message ~= "" then
-                            local bpcharacter_def = GetPathVal("Online>Chat>Bypass Character Filter")
-                            local bpprofanity_def = GetPathVal("Online>Chat>Bypass Profanity Filter")
-                            SetPathVal("Online>Chat>Bypass Character Filter",true)
-                            SetPathVal("Online>Chat>Bypass Profanity Filter",true)
-                            util.yield(10)
-                            menu.trigger_commands("sendpm"..players.get_name(player_to_kick).." "..kick_message)
-                            util.yield()
-                            SetPathVal("Online>Chat>Bypass Character Filter",bpcharacter_def)
-                            SetPathVal("Online>Chat>Bypass Profanity Filter",bpprofanity_def)
+                        if not player_to_kick == pid then
+                            menu.trigger_commands("mehkickmessage"..players.get_name(player_to_kick).." "..kick_message)
                         end
                         Kick(player_to_kick, method)
                     end
@@ -1618,16 +1762,16 @@ util.require_natives(1672190175)
             local crash = attack:list(Translate("Crash"))
 
             crash:action(Translate("Crash Player"),{},"",function()
-                Notify(Translate("Attempt to Crash ")..player_name,false)
+                Notify(Translate("Attempt to crash ")..player_name,false)
                 Crash(pid, player_name)
             end)
 
             crash:action(Translate("Crash Organisation"),{},Translate("Crash all organisation members."),function()
                 org_members = GetOrgMembers(pid)
                 if #org_members>1 then
-                    Notify(Translate("Attempt to Crash ")..player_name..Translate(" organisation."),false)
+                    Notify(Translate("Attempt to crash ")..player_name..Translate(" organisation."),false)
                 else
-                    Notify(Translate("Attempt to Crash ")..player_name,false)
+                    Notify(Translate("Attempt to crash ")..player_name,false)
                 end
                 for _,player_to_crash in pairs(org_members) do
                     if player_to_crash ~= players.user() then
