@@ -1,4 +1,4 @@
-local version = "0.88"
+local version = "0.8802"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -1014,6 +1014,22 @@ util.require_natives(1672190175)
                     end
                 end)
 
+                visual_warm = rendering:toggle(Tr("Warm"), {}, "", function(on) -- Skidded from jinxscript because someone asked 🗿
+                    visual = on
+                    if not menu.get_value(visual_warm) then
+                        GRAPHICS.ANIMPOSTFX_STOP_ALL()
+                    return end
+                    while visual do
+                        repeat
+                        GRAPHICS.SET_TIMECYCLE_MODIFIER("mp_bkr_int01_garage")
+                        menu.trigger_commands("shader off")
+                        util.yield()
+                        until GRAPHICS.GET_TIMECYCLE_MODIFIER_INDEX() ~= 728
+                        util.yield()
+                    end
+                    GRAPHICS.SET_TIMECYCLE_MODIFIER("DEFAULT")
+                end)
+
                 rendering:toggle_loop(Tr("Always Clear Weather"),{},Tr("Force clear weather.\nNote: It avoids the snow visual glitch in transitions."),function()
                     if InSession() then
                         menu.trigger_commands("weather extrasunny")
@@ -1696,7 +1712,6 @@ util.require_natives(1672190175)
                                 local tactical_nuke_height_used = 1
                                 local p_ped = PLAYER.GET_PLAYER_PED(pid)
                                 local p_vec = PED.GET_VEHICLE_PED_IS_IN(p_ped,false)
-                                util.toast(ENTITY.GET_ENTITY_SPEED(p_vec)..'\n'..ENTITY.GET_ENTITY_SPEED(p_ped))
                                 if ENTITY.GET_ENTITY_SPEED(p_vec) < 5 and ENTITY.GET_ENTITY_SPEED(p_ped) < 5 then
                                     tactical_nuke_height_used = height
                                 end
