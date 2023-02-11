@@ -1,6 +1,6 @@
 # Changelog
 
-## Update 0.87
+## Update 0.8802
 
 - Updated to Stand 99
 - Removed Notify and Save French cause may be used for malicious behaviour
@@ -11,4 +11,5 @@
 - Improved Protections
 - Improved Profiles
 - Improved Auto Accept Warning Stand [Game]
+- Fixed dev skill issue
 - Some other improvements
