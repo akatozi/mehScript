@@ -1,4 +1,4 @@
-local version = "0.87"
+local version = "0.88"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -8,10 +8,9 @@ util.require_natives(1672190175)
 
     local GetOn = function(on) if on then return "on" else return "off" end end
     local InSession = function() return util.is_session_started() and not util.is_session_transition_active() end
-    local GetPathVal = function(path) return menu.get_value(menu.ref_by_path(path)) end
-    local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) end end
-    local ClickPath = function(path) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.trigger_command(path_ref) end end
-    local Notify = function(str,translate=true) if notifications_enabled or update_available then if translate then str = Translate(str) end if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("> mehScript \n"..str) end end end
+    local SetPathVal = function(path,state) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.set_value(path_ref,state) else util.toast("invalid : "..path,TOAST_CONSOLE) end end
+    local ClickPath = function(path) local path_ref = menu.ref_by_path(path) if menu.is_ref_valid(path_ref) then menu.trigger_command(path_ref) else util.toast("invalid : "..path,TOAST_CONSOLE) end end
+    local Notify = function(str,translate=true) if notifications_enabled or update_available then if translate then str = Tr(str) end if notifications_mode == 2 then util.show_corner_help("~p~mehScript~s~~n~"..str ) else util.toast("> mehScript \n"..str) end end end
 
 --===============--
 -- Translation
@@ -77,7 +76,8 @@ util.require_natives(1672190175)
             ["Protections"] = "Protections",
             ["Game"] = "Jeu",
             ["Rendering"] = "Rendu",
-            ["Clear View"] = "Vision Dégagée",
+            ["Clear Day"] = "Jour Dégagé",
+            ["Clear Night"] = "Nuit Dégagée",
             ["Lock time to noon, without clouds."] = "Bloque le temps à midi, sans nuages.",
             ["Misc"] = "Divers",
             ["Show OTR Players"] = "Affiche Joueurs Invisible Radar",
@@ -183,8 +183,6 @@ util.require_natives(1672190175)
             ["Display Target"] = "Marquer Cible",
             ["Godmode Player"] = "Joueur Invincible",
             ["Inside Vehicle"] = "Dans un Véhicule",
-            ["Notify and Save French People"] = "Notifie et Sauvegarde les Joueurs Français",
-            [" is French."] = " est Français.",
             ["Hard (Karma)"] = "Enervé (Karma)",
             ["Safe (Detectable)"] = "Sûr (Detectable)",
             ["Add the date and hour as note to all players in the current session. If used couple time in the same session, players new players will have the same note as the first time you used it.\nNote: Somehow hour may be 10 min off."] = "Ajoute la date et l'heure en Note aux joueurs. Si utilisé plusieurs fois dans la même session, les nouveaux joueurs auront la même Note que la première fois où vous l'avez utilisé.\nNote: Bizarrement l'heure peut être décalée de 10 min.",
@@ -241,19 +239,28 @@ util.require_natives(1672190175)
             ["NPCS"] = "PNJ",
             ["You are already in the session."] = "Vous êtes déjà dans la session.",
             ["Should take less than 10 sec !"] = "Ca devrait prendre moins de 10 sec !",
+            ["Fully Invisible"] = "Complètement Invisible",
+            ["Tactical Nuke"] = "Bombe Nucléaire",
+            ["Send Tactical Nuke"] = "Lancer Bombe Nucléaire",
+            ["Say Who Sent it"] = "Dit qui l'a Lancé",
+            ["Nuke Height"] = "Hauteur Explosion",
+            ["is godmode."] = "est invincible.",
+            ["is in interior."] = "est en intérieur.",
+            ["Tactical nuke incoming !"] = "Bombe nucléaire en approche !",
+            ["You may be detected by other modders and karma !"] = "Tu risques d'être détecté par les modders et être karma"
         }
     }
 
-    Translate = function(str)
-        if english then
-            return str
-        else
+    Tr = function(str)
+        if not english then
             local translated_str = translation_table[user_lang][str]
             if translated_str == nil or translated_str == "" then
-                return "* "..str
+                util.toast("> mehscript (translation missing) : '"..str.."'",TOAST_CONSOLE)
+            else
+                return translated_str
             end
-            return translated_str
         end
+        return str
     end
 
 --===============--
@@ -261,13 +268,13 @@ util.require_natives(1672190175)
 --===============--
 
     local main = menu.my_root()
-    local self = main:list(Translate("Self"))
-    local vehicle = main:list(Translate("Vehicle"))
-    local online = main:list(Translate("Online"))
-    local protection = main:list(Translate("Protections"))
-    local profile = main:list(Translate("Profiles"))
-    local game = main:list(Translate("Game"))
-    local misc = main:list(Translate("Misc"))
+    local self = main:list(Tr("Self"))
+    local vehicle = main:list(Tr("Vehicle"))
+    local online = main:list(Tr("Online"))
+    local protection = main:list(Tr("Protections"))
+    local profile = main:list(Tr("Profiles"))
+    local game = main:list(Tr("Game"))
+    local misc = main:list(Tr("Misc"))
 
 --===============--
 -- Update
@@ -282,8 +289,8 @@ util.require_natives(1672190175)
         local latest_version = online_script:match("^local%s+version%s*=%s*\"(%d+%.%d+)\"")
         if tonumber(version) < tonumber(latest_version) then
             update_available = true
-            Notify(Translate("Version").." "..string.gsub(latest_version,"\n","",1).." "..Translate("available.\nPress Update to get it."),false)
-            update_button = menu.action(menu.my_root(),Translate("Update to").." "..latest_version,{},"",function()
+            Notify(Tr("Version").." "..string.gsub(latest_version,"\n","",1).." "..Tr("available.\nPress Update to get it."),false)
+            update_button = menu.action(menu.my_root(),Tr("Update to").." "..latest_version,{},"",function()
                 local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH,"wb")
                 f:write(online_script)
                 f:close()
@@ -305,34 +312,18 @@ util.require_natives(1672190175)
     -- Setup
     --===============--
 
-        main:hyperlink(Translate("Join Discord"),"https://discord.gg/uUNRn6xgw5")
+        main:hyperlink(Tr("Join Discord"),"https://discord.gg/uUNRn6xgw5")
 
         local stand_edition = menu.get_edition()
         local lua_path = "Stand>Lua Scripts>"..string.gsub(string.gsub(SCRIPT_RELPATH,".lua",""),"\\",">")
 
         local profiles = {
-            gigachad = {
-                "Self>Weapons>Infinite Ammo",
+            rockstar_admin = {
                 "Self>Immortality",
-                "Self>Gracefulness",
-                "Self>Glued To Seats",
-                "Self>Lock Wanted Level",
                 "Vehicle>Indestructible",
                 "Vehicle>Permanent Mint Condition",
-                "Self>Weapons>No Spread",
-                "Self>Weapons>No Recoil",
-                "Self>Infinite Stamina",
-                "Vehicle>Can't Be Locked On",
             },
-            script = {},
-            pvp = {
-                "Self>Weapons>Infinite Ammo",
-                "Self>Lock Wanted Level",
-                "Self>Weapons>No Spread",
-                "Self>Weapons>No Recoil",
-                lua_path..">"..Translate("Self")..">"..Translate("Weapons")..">"..Translate("Thermal Scope"),
-                lua_path..">"..Translate("Self")..">"..Translate("Auto Armor after Death"),
-            },
+
             undetected = {
                 "Self>Weapons>Infinite Ammo",
                 "Self>Gracefulness",
@@ -342,7 +333,17 @@ util.require_natives(1672190175)
                 "Self>Weapons>No Recoil",
                 "Self>Infinite Stamina",
                 "Vehicle>Can't Be Locked On",
+                "Online>Reveal Off The Radar Players",
+                "Online>Reveal Invisible Players",
             },
+
+            fight = {
+                lua_path..">"..Tr("Self")..">"..Tr("Weapons")..">"..Tr("Thermal Scope"),
+                lua_path..">"..Tr("Self")..">"..Tr("Auto Armor after Death"),
+                lua_path..">"..Tr("Self")..">"..Tr("Dead Silence"),
+            },
+
+            script = {},
         }
 
     --===============--
@@ -351,9 +352,9 @@ util.require_natives(1672190175)
 
         -- movement
 
-            local levitation_mode = self:list(Translate("Levitation Mode"))
+            local levitation_mode = self:list(Tr("Levitation Mode"))
 
-            levitation_mode:action(Translate("Stand Default"),{},Translate("Default Stand levitation with up and down forces."),function()
+            levitation_mode:action(Tr("Stand Default"),{},Tr("Default Stand levitation with up and down forces."),function()
                     menu.trigger_commands("levitatepassivemin 0")
                     menu.trigger_commands("levitatepassivemax 0.6")
                     menu.trigger_commands("levitatepassivespeed 5")
@@ -361,10 +362,10 @@ util.require_natives(1672190175)
                     menu.trigger_commands("levitateassistdown 0.6")
                     menu.trigger_commands("levitateassistdeadzone 13")
                     menu.trigger_commands("levitateassistsnap 0.1")
-                    Notify(Translate("Levitation Mode").." : "..Translate("Stand Default"),false)
+                    Notify(Tr("Levitation Mode").." : "..Tr("Stand Default"),false)
             end)
 
-            levitation_mode:action(Translate("No Clip"),{},Translate("Levitation without any weird forces on you."),function()
+            levitation_mode:action(Tr("No Clip"),{},Tr("Levitation without any weird forces on you."),function()
                 menu.trigger_commands("levitatepassivemin 0")
                 menu.trigger_commands("levitatepassivemax 0")
                 menu.trigger_commands("levitatepassivespeed 0")
@@ -372,14 +373,14 @@ util.require_natives(1672190175)
                 menu.trigger_commands("levitateassistdown 0")
                 menu.trigger_commands("levitateassistdeadzone 0")
                 menu.trigger_commands("levitateassistsnap 0")
-                Notify(Translate("Levitation Mode").." : "..Translate("No Clip"),false)
+                Notify(Tr("Levitation Mode").." : "..Tr("No Clip"),false)
             end)
 
         -- weapons
 
-            local weaponm = self:list(Translate("Weapons"))
+            local weaponm = self:list(Tr("Weapons"))
 
-            local aimbot = weaponm:list(Translate("Aimbot"))
+            local aimbot = weaponm:list(Tr("Aimbot"))
 
                 -- Original made by Lance but improved a lot by myself
                 handle_ptr = memory.alloc(13*8)
@@ -462,7 +463,7 @@ util.require_natives(1672190175)
                 end
 
                 local aimbot_area_selected = {}
-                aimbot:toggle_loop(Translate("Aimbot"),{},"", function()
+                aimbot:toggle_loop(Tr("Aimbot"),{},"", function()
                     local target = get_aimbot_target()
                     if target ~= 0 then
                         local aimbot_selected_area = aimbot_area_selected[math.random(#aimbot_area_selected)]
@@ -494,16 +495,16 @@ util.require_natives(1672190175)
                 end)
                 
                 aimbot_fov = 10
-                aimbot:slider(Translate("FOV"), {"mehaimbotfov"}, Translate("High value may result in focusing wrong target."), 1, 180, aimbot_fov, 1, function(s)
+                aimbot:slider(Tr("FOV"), {"mehaimbotfov"}, Tr("High value may result in focusing wrong target."), 1, 180, aimbot_fov, 1, function(s)
                     aimbot_fov = s
                 end)
 
                 aimbot_damage = 100
-                aimbot:slider(Translate("Weapon Damage %"), {"mehaimbotdamage"}, "", 1, 1000, aimbot_damage, 1, function(s)
+                aimbot:slider(Tr("Weapon Damage %"), {"mehaimbotdamage"}, "", 1, 1000, aimbot_damage, 1, function(s)
                     aimbot_damage = s
                 end)
 
-                aimbot_area = aimbot:list(Translate("Area to Shoot"))
+                aimbot_area = aimbot:list(Tr("Area to Shoot"))
 
                     aimbot_remove_area = function(boneID)
                         for i, v in ipairs(aimbot_area_selected) do
@@ -515,8 +516,8 @@ util.require_natives(1672190175)
                     end
 
                     table.insert(aimbot_area_selected, 31086)
-                    local aimbot_area_message = Translate("If you select several options, it will chose one randomly everytime you shoot.")
-                    aimbot_area:toggle(Translate("Head"),{},aimbot_area_message,function(on)
+                    local aimbot_area_message = Tr("If you select several options, it will chose one randomly everytime you shoot.")
+                    aimbot_area:toggle(Tr("Head"),{},aimbot_area_message,function(on)
                         if on then
                             table.insert(aimbot_area_selected, 31086)
                         else
@@ -524,7 +525,7 @@ util.require_natives(1672190175)
                         end
                     end, true)
 
-                    aimbot_area:toggle(Translate("Chest"),{},aimbot_area_message,function(on)
+                    aimbot_area:toggle(Tr("Chest"),{},aimbot_area_message,function(on)
                         if on then
                             table.insert(aimbot_area_selected, 24818)
                         else
@@ -532,7 +533,7 @@ util.require_natives(1672190175)
                         end
                     end)
 
-                    aimbot_area:toggle(Translate("Pelvis"),{},aimbot_area_message,function(on)
+                    aimbot_area:toggle(Tr("Pelvis"),{},aimbot_area_message,function(on)
                         if on then
                             table.insert(aimbot_area_selected, 11816)
                         else
@@ -540,8 +541,8 @@ util.require_natives(1672190175)
                         end
                     end)
 
-                aimbot_through_walls = aimbot:list(Translate("Through Walls Settings"))
-                    aimbot_through_walls:toggle(Translate("Shoot Through Walls"),{},"", function(on)
+                aimbot_through_walls = aimbot:list(Tr("Through Walls Settings"))
+                    aimbot_through_walls:toggle(Tr("Shoot Through Walls"),{},"", function(on)
                         aimbot_shoot_walls = on
                         if not on and aimbot_esp_behind_walls then
                             menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
@@ -550,7 +551,7 @@ util.require_natives(1672190175)
                     end)
 
                     if stand_edition >= 2 then
-                        aimbot_through_walls:toggle(Translate("ESP When Behind Walls"),{},Translate("Works only if Shoot Through Walls is enabled."), function(on)
+                        aimbot_through_walls:toggle(Tr("ESP When Behind Walls"),{},Tr("Works only if Shoot Through Walls is enabled."), function(on)
                             aimbot_esp_behind_walls = on
                             if not on then
                                 menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
@@ -559,39 +560,39 @@ util.require_natives(1672190175)
                         end)
                     end
                 
-                aimbot_taget_settings = aimbot:list(Translate("Target Settings"))
+                aimbot_taget_settings = aimbot:list(Tr("Target Settings"))
 
                     aimbot_target_players = true
-                    aimbot_taget_settings:toggle(Translate("Players"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("Players"),{},"", function(on)
                         aimbot_target_players = on
                     end, true)
 
-                    aimbot_taget_settings:toggle(Translate("NPCS"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("NPCS"),{},"", function(on)
                         aimbot_target_peds = on
                     end)
 
                     aimbot_target_vehicle = true
-                    aimbot_taget_settings:toggle(Translate("Inside Vehicle"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("Inside Vehicle"),{},"", function(on)
                         aimbot_target_vehicle = on
                     end, true)
         
                     aimbot_target_godmode = true
-                    aimbot_taget_settings:toggle(Translate("Godmode Player"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("Godmode Player"),{},"", function(on)
                         aimbot_target_godmode = on
                     end, true)
                     
                     aimbot_target_friends = true
-                    aimbot_taget_settings:toggle(Translate("Friends"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("Friends"),{},"", function(on)
                         aimbot_target_friends = on
                     end, true)
                     
                     aimbot_show_taget = true
-                    aimbot_taget_settings:toggle(Translate("Display Target"),{},"", function(on)
+                    aimbot_taget_settings:toggle(Tr("Display Target"),{},"", function(on)
                         aimbot_show_taget = on
                     end, true)
 
             local thermal_command = menu.ref_by_path('Game>Rendering>Thermal Vision')
-            weaponm:toggle_loop(Translate("Thermal Scope"),{},Translate("Press E while aiming to activate."),function()
+            weaponm:toggle_loop(Tr("Thermal Scope"),{},Tr("Press E while aiming to activate."),function()
                 local aiming = PLAYER.IS_PLAYER_FREE_AIMING(players.user())
                 if GRAPHICS.GET_USINGSEETHROUGH() and not aiming then
                     menu.trigger_command(thermal_command,'off')
@@ -609,15 +610,15 @@ util.require_natives(1672190175)
 
         -- features
 
-            local regen_all = self:action(Translate("Refill Health & Armor"),{},Translate("Regenerate to max your health and armor."),function()
+            local regen_all = self:action(Tr("Refill Health & Armor"),{},Tr("Regenerate to max your health and armor."),function()
                 ENTITY.SET_ENTITY_HEALTH(players.user_ped(),ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped()))
                 PED.SET_PED_ARMOUR(players.user_ped(),PLAYER.GET_PLAYER_MAX_ARMOUR(players.user()))
             end)
 
             local dead = 0
-            self:toggle(Translate("Auto Armor after Death"),{},Translate("A body armor will be applied automatically when respawning."),function()
+            self:toggle(Tr("Auto Armor after Death"),{},Tr("A body armor will be applied automatically when respawning."),function()
                 menu.trigger_command(regen_all)
-                local cmd_path = lua_path..">"..Translate("Self")..">"..Translate("Auto Armor after Death")
+                local cmd_path = lua_path..">"..Tr("Self")..">"..Tr("Auto Armor after Death")
                 while menu.get_state(menu.ref_by_path(cmd_path)) == "On" do
                     local health = ENTITY.GET_ENTITY_HEALTH(players.user_ped())
                     if health == 0 and dead == 0 then
@@ -630,15 +631,15 @@ util.require_natives(1672190175)
                 end
             end)
 
-            table.insert(profiles["script"],self:toggle(Translate("Always Clean"),{},Translate("Keep your ped dry and clean."),function(on)
+            self:toggle(Tr("Always Clean"),{},Tr("Keep your ped dry and clean."),function(on)
                 util.yield()
                 on = GetOn(on)
                 menu.trigger_commands("lockwetness "..on)
                 menu.trigger_commands("noblood "..on)
                 menu.trigger_commands("wetness 0")
-            end))
+            end)
 
-            auto_bst = self:toggle_loop(Translate("Smart BST"),{},Translate("Auto enable BST when you have weapon in hands."),function()
+            auto_bst = self:toggle_loop(Tr("Smart BST"),{},Tr("Auto enable BST when you have weapon in hands."),function()
                 local on = GetOn(WEAPON.IS_PED_ARMED(players.user_ped(),7))
                 menu.trigger_commands("bst "..on)
                 util.yield(100)
@@ -646,8 +647,14 @@ util.require_natives(1672190175)
                 menu.trigger_commands("bst off")
             end)
         
-            self:toggle(Translate("Dead Silence"),{},"",function(on)
+            self:toggle(Tr("Dead Silence"),{},"",function(on)
                 AUDIO.SET_PED_FOOTSTEPS_EVENTS_ENABLED(players.user_ped(), not on)
+            end)
+
+            self:toggle(Tr("Fully Invisible"),{},"",function(on)
+                local on = GetOn(on)
+                menu.trigger_commands("invisibility "..on)
+                menu.trigger_commands("otr "..on)
             end)
 
     --===============--
@@ -656,7 +663,7 @@ util.require_natives(1672190175)
 
         -- drift
 
-            local drift = vehicle:list(Translate("Drift"),{},"")
+            local drift = vehicle:list(Tr("Drift"),{},"")
 
             get_heading = function(vec)
                 local v = ENTITY.GET_ENTITY_VELOCITY(vec)
@@ -675,7 +682,7 @@ util.require_natives(1672190175)
             local drift_assist_value = 50
 
             -- inpired by 2t1 drift script
-            drift:toggle_loop(Translate("Drift"),{},Translate("Press SHIFT to drift."),function()
+            drift:toggle_loop(Tr("Drift"),{},Tr("Press SHIFT to drift."),function()
                 if vec then
                     if PAD.IS_CONTROL_PRESSED(21,21) and (ENTITY.GET_ENTITY_SPEED(vec)*3.6) >= 8 then
                         if (VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vec) and not ENTITY.IS_ENTITY_IN_AIR(vec)) then
@@ -697,17 +704,17 @@ util.require_natives(1672190175)
                 end
             end)
 
-            drift:toggle(Translate("Counter Steering Assist"),{},Translate("Helps you so you don't do 360."),function(on)
+            drift:toggle(Tr("Counter Steering Assist"),{},Tr("Helps you so you don't do 360."),function(on)
                 drift_assist = on
             end,drift_assist)
 
-            drift:slider(Translate("Counter Steering Angle"),{},Translate("Your drift angle can't be higher than this value."),30,90,drift_assist_value,1,function(val)
+            drift:slider(Tr("Counter Steering Angle"),{},Tr("Your drift angle can't be higher than this value."),30,90,drift_assist_value,1,function(val)
                 drift_assist_value = val
             end)
 
         -- features
 
-            vehicle:toggle(Translate("Launch Control"),{},Translate("Prevents the car from burnout when starting to drive away faster."),function(on)
+            vehicle:toggle(Tr("Launch Control"),{},Tr("Prevents the car from burnout when starting to drive away faster."),function(on)
                 PHYSICS.SET_IN_ARENA_MODE(on)
             end)
     
@@ -717,45 +724,68 @@ util.require_natives(1672190175)
 
         -- session
 
-            local session = online:list(Translate("Session"))
-            local session_bouty = session:list(Translate("Bounty"))
+            local session = online:list(Tr("Session"))
 
-            local bounty_include_self = true
-            local session_bounty_amount = 10000
-            session_bouty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop offer bounty on everyone."),function()
-                for _,pid in pairs(players.list(bounty_include_self)) do
-                    if InSession() and players.get_bounty(pid) ~= session_bounty_amount and players.get_name(pid) ~= "UndiscoveredPlayer" then
-                        menu.trigger_commands("bounty"..players.get_name(pid).." "..session_bounty_amount)
+            local session_bouty = session:list(Tr("Bounty"))
+                local bounty_include_self = true
+                local session_bounty_amount = 10000
+                session_bouty:toggle_loop(Tr("Auto Bounty"),{},Tr("Loop offer bounty on everyone."),function()
+                    for _,pid in pairs(players.list(bounty_include_self)) do
+                        if InSession() and players.get_bounty(pid) ~= session_bounty_amount and players.get_name(pid) ~= "UndiscoveredPlayer" then
+                            menu.trigger_commands("bounty"..players.get_name(pid).." "..session_bounty_amount)
+                        end
+                        util.yield(150)
                     end
-                    util.yield(150)
-                end
-                util.yield(5000)
-            end)
+                    util.yield(5000)
+                end)
 
-            session_bouty:slider(Translate("Bounty Amount"),{"mehautobountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
-                session_bounty_amount = amount
-            end)
+                session_bouty:slider(Tr("Bounty Amount"),{"mehautobountyamount"},Tr("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+                    session_bounty_amount = amount
+                end)
 
-            session_bouty:toggle(Translate("Exclude Self"),{},Translate("Bounty will not be offered on yourself."),function(on)
-                bounty_include_self = on == false
-            end)
+                session_bouty:toggle(Tr("Exclude Self"),{},Tr("Bounty will not be offered on yourself."),function(on)
+                    bounty_include_self = on == false
+                end)
 
-            notify_french_players = false
+                local session_tactical_nuke = session:list(Tr("Tactical Nuke"))
+                local session_tactical_nuke_owned = false
+                session_tactical_nuke:action(Tr("Send Tactical Nuke"),{},Tr("You may be detected by other modders and karma !"),function()
+                    for _, pid in pairs(players.list(false)) do
+                        util.create_thread(function()
+                            SendNuke(pid,true,session_tactical_nuke_height,session_tactical_nuke_owned)
+                            util.stop_thread()
+                        end)
+                    end
+                end)
+
+                session_tactical_nuke:toggle(Tr("Say Who Sent it"), {}, "", function(on)
+                    session_tactical_nuke_owned = on
+                end)
+
+                session_tactical_nuke_height = 10
+                session_tactical_nuke:slider(Tr("Nuke Height"), {}, "", 1, 50, session_tactical_nuke_height, 1,function(s)
+                    session_tactical_nuke_height = s
+                end)
+
             Check = function(pid)
                 while not util.is_session_started() or util.is_session_transition_active() do
+                    if not players.exists(pid) then
+                        return
+                    end
                     util.yield()
                 end
                 if pid ~= players.user() then
                     CheckTryhard(pid)
-                    if notify_french_players then
-                        CheckFrench(pid)
-                    end
                 end
             end
 
             kick_tryhard = false
             CheckTryhard = function(pid)
-                if pid ~= players.user() and kick_tryhard then
+                while players.exists(pid) and kick_tryhard and not NETWORK.NETWORK_IS_PLAYER_CONNECTED(pid) do
+                    util.yield(10)
+                    util.draw_debug_text(players.get_name(pid).." connecting")
+                end
+                if players.exists(pid) and pid ~= players.user() and kick_tryhard then
                     local name = players.get_name(pid)
                     local char_count = 0
                     local letters = {"l","I","i","L","x","X","-","_"}
@@ -765,18 +795,18 @@ util.require_natives(1672190175)
                             char_count = char_count + 1
                         end
                     end
-                    if (char_count / #name) >= 0.8 then
+                    if (char_count / #name) >= 0.85 then
                         if notifications_enabled then
-                            Notify(Translate("Attempt to kick ")..name.."\n"..Translate("Reason: Tryhard Name"),false)
+                            Notify(Tr("Attempt to kick ")..name.."\n"..Tr("Reason: Tryhard Name"),false)
                         end
                         while players.exists(pid) do
                             Kick(pid, 2)
                             util.yield(4000)
                         end
                         return
-                    elseif players.get_kd(pid) >= 4 then
+                    elseif players.get_kd(pid) >= 5 then
                         if notifications_enabled then
-                            Notify(Translate("Attempt to kick ")..name.."\n"..Translate("Reason: Tryhard K/D").." ("..players.get_kd(pid)..")",false)
+                            Notify(Tr("Attempt to kick ")..name.."\n"..Tr("Reason: Tryhard K/D").." ("..players.get_kd(pid)..")",false)
                         end
                         while players.exists(pid) do
                             Kick(pid, 2)
@@ -790,9 +820,9 @@ util.require_natives(1672190175)
             Kick = function(pid, method=1)
                 local name = players.get_name(pid)
                 if players.exists(pid) and players.get_name(pid) == name then
-                    if menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction"))) then
+                    if menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Tr("Attack")..">"..Tr("Add Block Join Reaction"))) then
                         menu.trigger_commands("historyblock"..name.." on")
-                        Notify(Translate("Block Join Reaction Added to ")..name..".",false)
+                        Notify(Tr("Block Join Reaction Added to ")..name..".",false)
                     end
                     if players.get_host() == pid then
                         menu.trigger_commands("ban"..players.get_name(pid))
@@ -825,7 +855,7 @@ util.require_natives(1672190175)
                             ClickPath("Online>Chat>Bypass Character Filter>Disabled")
                             ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
                         end
-                        util.yield(5000)
+                        util.yield(7000)
                         if players.exists(pid) and players.get_name(pid) == name then
                             menu.trigger_commands("ban"..name)
                         end
@@ -838,7 +868,7 @@ util.require_natives(1672190175)
                 end
             end
 
-            session:toggle(Translate("Auto Kick Tryhard"),{},"",function(on)
+            session:toggle(Tr("Auto Kick Tryhard"),{},"",function(on)
                 kick_tryhard = on
                 if on then
                     for _,pid in pairs(players.list()) do
@@ -847,28 +877,11 @@ util.require_natives(1672190175)
                 end
             end)
 
-            CheckFrench = function(pid)
-                local player_name = players.get_name(pid)
-                if players.get_language(pid) == 1 then
-                    Notify(player_name.. Translate(" is French."))
-                    menu.trigger_commands("historynote"..player_name.." FR")
-                end
-            end
-
-            session:toggle(Translate("Notify and Save French People"), {}, "", function(on)
-                notify_french_players = on
-                if on then
-                    for _, pid in ipairs(players.list(false, true, true)) do
-                        CheckFrench(pid)
-                    end
-                end
-            end)
-
-            become_host = session:action(Translate("Become Host"),{},Translate("Kick players until you become host."),function(type)
+            become_host = session:action(Tr("Become Host"),{},Tr("Kick players until you become host."),function(type)
                 if InSession() then
                     if players.get_host() ~= players.user() then
                         local players_before_host = players.get_host_queue_position(players.user())
-                        menu.show_warning(become_host, type, Translate("Warning: You are about to kick around").." "..players_before_host.." "..Translate("players until you become host. Are you sure ?"), function()
+                        menu.show_warning(become_host, type, Tr("Warning: You are about to kick around").." "..players_before_host.." "..Tr("players until you become host. Are you sure ?"), function()
                             if InSession() then
                                 while players.get_host() ~= players.user() do
                                     local host = players.get_host()
@@ -886,7 +899,7 @@ util.require_natives(1672190175)
                 end
             end)
 
-            session:action(Translate("Become Script Host"),{},"",function()
+            session:action(Tr("Become Script Host"),{},"",function()
                 if InSession() then
                     menu.trigger_commands("givesh"..players.get_name(players.user()))
                 end
@@ -894,7 +907,7 @@ util.require_natives(1672190175)
 
             local session_already_saved = false
             local unix_milliseconds, unix_seconds, date
-            session:action(Translate("Save All Players"),{},Translate("Add the date and hour as note to all players in the current session. If used couple time in the same session, players new players will have the same note as the first time you used it.\nNote: Somehow hour may be 10 min off."),function()
+            session:action(Tr("Save All Players"),{},Tr("Add the date and hour as note to all players in the current session. If used couple time in the same session, players new players will have the same note as the first time you used it.\nNote: Somehow hour may be 10 min off."),function()
                 if not session_already_saved then
                     unix_milliseconds = os.time() * 1000 + (os.clock() * 1000)
                     unix_seconds = math.floor(unix_milliseconds / 1000)
@@ -908,8 +921,10 @@ util.require_natives(1672190175)
                 end
             end)
 		
+        -- features
+
             if stand_edition >= 2 then
-				spoof_session_informations = online:toggle(Translate("Spoof Session Informations"),{},Translate("Spoof your session informations so nobody can join you from your R* profile."),function(on)
+				spoof_session_informations = online:toggle(Tr("Spoof Session Informations"),{},Tr("Spoof your session informations so nobody can join you from your R* profile."),function(on)
 					if on then
 						menu.trigger_commands("spoofsession storymode")
 						if stand_edition == 3 then
@@ -925,16 +940,14 @@ util.require_natives(1672190175)
                 table.insert(profiles["script"],spoof_session_informations)
 			end
 
-        -- features
-
-            online:toggle_loop(Translate("Disable RP Gain"),{},Translate("You will not gain any RP."),function()
+            online:toggle_loop(Tr("Disable RP Gain"),{},Tr("You will not gain any RP."),function()
                 memory.write_float(memory.script_global(262145 + 1),0)
             end,function()
                 memory.write_float(memory.script_global(262145 + 1),1)
             end)
 
             local max_health
-            undead_otr = online:toggle(Translate("Undead OTR"),{},Translate("Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."),function(on)
+            undead_otr = online:toggle(Tr("Undead OTR"),{},Tr("Turn you off the radar without notifying other players.\nNote: Trigger Modded Health detection."),function(on)
                 if on then
                     max_health = ENTITY.GET_ENTITY_MAX_HEALTH(players.user_ped())
                     while menu.get_state(undead_otr) == "On" do
@@ -948,7 +961,7 @@ util.require_natives(1672190175)
                 end
             end)
 
-            online:action(Translate("Stop Spectating"),{},Translate("If you are spectating a player,it will stop to spectate him."),function()
+            online:action(Tr("Stop Spectating"),{},Tr("If you are spectating a player,it will stop to spectate him."),function()
                 if #player_spectate ~= 0 then
                     menu.trigger_commands("mehspectate"..player_spectate[1].." off")
                 end
@@ -963,56 +976,72 @@ util.require_natives(1672190175)
                 ResetRendering = function()
                     menu.trigger_commands("locktime off")
                     menu.trigger_commands("clouds normal")
-                    menu.trigger_commands("shader off")
                     if InSession() then
                         menu.trigger_commands("syncclock")
                     end
-                    menu.set_value(menu.ref_by_path('World>Aesthetic Light>Aesthetic Light'),false)
-                    menu.set_value(always_clear_toggle, false)
                 end
     
     
-                local rendering = game:list(Translate("Rendering"))
-                rendering:action(Translate("Default"),{},"",function()
-                    ResetRendering()
-                end)
+                local rendering = game:list(Tr("Rendering"))
     
-                rendering:action(Translate("Clear View"),{},Translate("Lock time to noon, without clouds."),function()
-                    ResetRendering()
-                    menu.trigger_commands("locktime on")
-                    menu.trigger_commands("timesmoothing off")
-                    menu.trigger_commands("time 12")
-                    menu.set_value(always_clear_toggle, true)
+                clear_day = rendering:toggle(Tr("Clear Day"),{},"",function(on)
+                    util.yield()
+                    if on then
+                        if menu.get_value(clear_night) then
+                            menu.set_value(clear_night, false)
+                        end
+                        menu.trigger_commands("locktime on")
+                        menu.trigger_commands("timesmoothing off")
+                        menu.trigger_commands("time 13")
+                        menu.trigger_commands("clouds horizon")
+                    elseif not menu.get_value(clear_night) then
+                        ResetRendering()
+                    end
                 end)
 
-                always_clear_toggle = rendering:toggle_loop(Translate("Always Clear Weather"),{},Translate("Force clear weather.\nNote: It avoids the snow visual glitch in transitions."),function()
+                clear_night = rendering:toggle(Tr("Clear Night"),{},"",function(on)
+                    util.yield()
+                    if on then
+                        if menu.get_value(clear_day) then
+                            menu.set_value(clear_day, false)
+                        end
+                        menu.trigger_commands("locktime on")
+                        menu.trigger_commands("timesmoothing off")
+                        menu.trigger_commands("time 0")
+                        menu.trigger_commands("clouds horizon")
+                    elseif not menu.get_value(clear_day) then
+                        ResetRendering()
+                    end
+                end)
+
+                rendering:toggle_loop(Tr("Always Clear Weather"),{},Tr("Force clear weather.\nNote: It avoids the snow visual glitch in transitions."),function()
                     if InSession() then
-                        menu.trigger_commands("weather clear")
+                        menu.trigger_commands("weather extrasunny")
                     else
                         menu.trigger_commands("weather normal")
                     end
-                    util.yield()
+                    util.yield(100)
                 end, function()
                     menu.trigger_commands("weather normal")
                 end)
 
         -- features
 
-            game:toggle_loop(Translate("Auto Skip Conversation"),{},Translate("Automatically skip all conversations."),function()
+            game:toggle_loop(Tr("Auto Skip Conversation"),{},Tr("Automatically skip all conversations."),function()
                 if AUDIO.IS_SCRIPTED_CONVERSATION_ONGOING() then
                     AUDIO.SKIP_TO_NEXT_SCRIPTED_CONVERSATION_LINE()
                 end
                 util.yield()
             end)
 
-            game:toggle_loop(Translate("Auto Skip Cutscene"),{},Translate("Automatically skip all cutscenes."),function()
+            game:toggle_loop(Tr("Auto Skip Cutscene"),{},Tr("Automatically skip all cutscenes."),function()
                 CUTSCENE.STOP_CUTSCENE_IMMEDIATELY()
                 util.yield(100)
             end)
 
-            game:toggle_loop(Translate("Auto Accept Warning"),{},"",function()
-                local mess_hash = HUD.GET_WARNING_SCREEN_MESSAGE_HASH()
-                if mess_hash == -896436592 then
+            game:toggle_loop(Tr("Auto Accept Warning"),{},"",function()
+                local mess_hash = math.abs(HUD.GET_WARNING_SCREEN_MESSAGE_HASH())
+                if mess_hash == 896436592 then
                     Notify("This player left the session.")
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
                 elseif mess_hash == 1575023314 then
@@ -1021,13 +1050,13 @@ util.require_natives(1672190175)
                 elseif mess_hash == 1446064540 then
                     Notify("You are already in the session.")
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
-                --          transaction error              join session             join session            leave session           leave online
-                elseif mess_hash == -991495373 or mess_hash == -587688989 or mess_hash == 15890625 or mess_hash == 99184332 or mess_hash == 1246147334 then
+                --          transaction error              join session             join session            leave session           leave online                 full of ceo
+                elseif mess_hash == 991495373 or mess_hash == 587688989 or mess_hash == 15890625 or mess_hash == 99184332 or mess_hash == 1246147334 or mess_hash == 583244483 then
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
                 elseif mess_hash ~= 0 then
                     util.toast(mess_hash, TOAST_CONSOLE)
                 end
-                util.yield()
+                util.yield(50)
             end)
 
     --===============--
@@ -1035,12 +1064,7 @@ util.require_natives(1672190175)
     --===============--
 
         local protections = {
-            femboy = { -- on = 4
-                "Online>Protections>Events>Crash Event",
-                "Online>Protections>Events>Kick Event",
-            },
-
-            god = { -- on = 4
+            best = {
                 "Online>Protections>Syncs>Invalid Model Sync",
                 "Online>Protections>Syncs>World Object Sync",
                 "Online>Protections>Syncs>Cage",
@@ -1062,12 +1086,31 @@ util.require_natives(1672190175)
                 "Online>Protections>Events>Force Camera Forward",
                 "Online>Protections>Events>Modded Event",
                 "Online>Protections>Events>CEO/MC Kick",
+                "Online>Protections>Events>Modded Event",
+                "Online>Protections>Events>Trigger Business Raid",
+                "Online>Protections>Events>Infinite Phone Ringing",
+                "Online>Protections>Events>Vehicle Takeover",
+                "Online>Protections>Events>Freeze",
+                "Online>Protections>Events>Explosion Spam",
+                "Online>Protections>Events>Camera Shaking Event",
+                "Online>Protections>Events>Raw Network Events>PTFX",
+                "Online>Protections>Events>Raw Network Events>Remove All Weapons Event",
+                "Online>Protections>Events>Raw Network Events>Remove Weapon Event",
+                "Online>Protections>Events>Raw Network Events>Give Weapon Event",
+                "Online>Protections>Events>Raw Network Events>GIVE_PICKUP_REWARDS_EVENT",
+                "Online>Protections>Events>Raw Network Events>REMOVE_STICKY_BOMB_EVENT",
+                "Online>Protections>Events>Love Letter Kick Blocking Event",
+                "Online>Protections>Events>Modded Damage Event",
+                "Online>Reactions>Love Letter Kick Reactions",
+            },
+
+            normal = {
+                "Online>Protections>Events>Crash Event",
+                "Online>Protections>Events>Kick Event",
             },
 
             additional = {
                 "Online>Protections>Buttplug Kick Reactions>Myself>Block",
-                "Online>Protections>Buttplug Kick Reactions>Someone Else>Block",
-                "Online>Protections>Breakup Kick Reactions>Block",
                 "Online>Protections>Host Kicks>Lessen Host Kicks",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Karma",
                 "Online>Protections>Love Letter & Desync Kicks>Block Love Letter Kicks",
@@ -1075,6 +1118,11 @@ util.require_natives(1672190175)
                 "Online>Protections>Block Entity Spam>Block Entity Spam",
                 "Online>Protections>Block Entity Spam>Automatically Use Anti-Crash Cam",
                 "Online>Protections>Prevent Renderer Working To Death",
+            },
+
+            additional_bis = {
+                "Online>Protections>Buttplug Kick Reactions>Someone Else>Block",
+                "Online>Protections>Breakup Kick Reactions>Block",
             },
 
             additional_regular_stand = {
@@ -1101,79 +1149,39 @@ util.require_natives(1672190175)
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Write To Log File",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Someone Else>Write To Log File",
             },
-
-            special = { -- on = 3
-                "Online>Protections>Events>Infinite Phone Ringing",
-                "Online>Protections>Events>Vehicle Takeover",
-                "Online>Protections>Events>Freeze",
-                "Online>Protections>Events>Explosion Spam",
-                "Online>Protections>Events>Camera Shaking Event",
-                "Online>Protections>Events>Raw Network Events>PTFX",
-                "Online>Protections>Events>Raw Network Events>Remove All Weapons Event",
-                "Online>Protections>Events>Raw Network Events>Remove Weapon Event",
-                "Online>Protections>Events>Raw Network Events>Give Weapon Event",
-                "Online>Protections>Events>Raw Network Events>GIVE_PICKUP_REWARDS_EVENT",
-                "Online>Protections>Events>Raw Network Events>REMOVE_STICKY_BOMB_EVENT",
-                "Online>Protections>Events>Love Letter Kick Blocking Event",
-                "Online>Reactions>Love Letter Kick Reactions",
-            }
         }
 
-        SetProtectionsToggle = function(on,mode)
-            for _,path in pairs(protections[mode]) do
-                SetPathVal(path..">Block",on)
-                if protections_log and on ~= 0 then
-                    SetPathVal(path..">Write To Log File",3)
-                    SetPathVal(path..">Write To Console",3)
-                else
-                    SetPathVal(path..">Write To Log File",0)
-                    SetPathVal(path..">Write To Console",0)
-                end
-                if protections_notification and on ~= 0 then
-                    SetPathVal(path..">Notification",3)
-                else
-                    SetPathVal(path..">Notification",0)
-                end
-            end
-            local special_on = 0
-            if mode == "god" and on ~= 0 then
-                special_on = 2
-            end
-            SetProtectionsToggleSpecial(special_on)
-        end
-
-        SetProtectionsToggleSpecial = function(on)
-            for _,path in pairs(protections["special"]) do
-                SetPathVal(path..">Block",on)
-                if protections_log and on ~= 0 then
-                    SetPathVal(path..">Write To Log File",2)
-                    SetPathVal(path..">Write To Console",2)
-                else
-                    SetPathVal(path..">Write To Log File",0)
-                    SetPathVal(path..">Write To Console",0)
-                end
-                if protections_notification and on ~= 0 then
-                    SetPathVal(path..">Notification",2)
-                else
-                    SetPathVal(path..">Notification",0)
-                end
-            end
-        end
-
-        SetProtections = function(mode,state)
-            local add_state = false
-            local log_on = protections_log
-            local notification_on = protections_notification
+        ToggleProtections = function(mode,state)
+            local log_on, notification_on, enabled_state
             if state then
-                SetProtectionsToggle(2,mode)
-                add_state = true
-            else
+                log_on = protections_log
+                notification_on = protections_notification
+                enabled_state = ">Enabled"
+                else
                 log_on = false
                 notification_on = false
-                SetProtectionsToggle(0,mode)
+                enabled_state = ">Disabled"
+            end
+            for _,path in pairs(protections[mode]) do
+                ClickPath(path..">Block"..enabled_state)
+                if protections_log and state then
+                    ClickPath(path..">Write To Log File>Enabled")
+                    ClickPath(path..">Write To Console>Enabled")
+                else
+                    ClickPath(path..">Write To Log File>Disabled")
+                    ClickPath(path..">Write To Console>Disabled")
+                end
+                if protections_notification and state then
+                    ClickPath(path..">Notification>Enabled")
+                else
+                    ClickPath(path..">Notification>Disabled")
+                end
             end
             for _,path in pairs(protections["additional"]) do
-                SetPathVal(path,add_state)
+                SetPathVal(path,state)
+            end
+            for _,path in pairs(protections["additional_bis"]) do
+                ClickPath(path..enabled_state)
             end
             for _,path in pairs(protections["additional_log"]) do
                 SetPathVal(path,log_on)
@@ -1183,7 +1191,7 @@ util.require_natives(1672190175)
             end
             if stand_edition >= 2 then
                 for _,path in pairs(protections["additional_regular_stand"]) do
-                    SetPathVal(path,add_state)
+                    SetPathVal(path,state)
                 end
             end
         end
@@ -1191,44 +1199,44 @@ util.require_natives(1672190175)
         Protections = function(str,toast=1)
             if str == "Normal" then
                 menu.trigger_commands("novotekicks sctv")
-                SetProtections("god",false)
-                SetProtections("femboy",true)
+                ToggleProtections("best",false)
+                ToggleProtections("normal",true)
             elseif str == "Best" then
                 menu.trigger_commands("novotekicks sctv")
-                SetProtections("femboy",true)
-                SetProtections("god",true)
+                ToggleProtections("normal",true)
+                ToggleProtections("best",true)
             elseif str == "None" then
                 menu.trigger_commands("novotekicks off")
-                SetProtections("femboy",false)
-                SetProtections("god",false)
+                ToggleProtections("normal",false)
+                ToggleProtections("best",false)
             end
             if notifications_enabled and toast == 1 then
-                Notify(Translate("Protections").." : "..Translate(str),false)
+                Notify(Tr("Protections").." : "..Tr(str),false)
             end
         end
 
-        protection:action(Translate("Best"),{},Translate("Enable all protections."),function()
+        protection:action(Tr("Best"),{},Tr("Enable all protections."),function()
             Protections("Best")
         end)
 
-        protection:action(Translate("Normal"),{},Translate("Enable crash and kick protections."),function()
+        protection:action(Tr("Normal"),{},Tr("Enable crash and kick protections."),function()
             Protections("Normal")
         end)
 
-        protection:action(Translate("None"),{},Translate("Disable all protections."),function()
+        protection:action(Tr("None"),{},Tr("Disable all protections."),function()
             Protections("None")
         end)
 
-        protection:divider(Translate("Protections Settings"))
+        protection:divider(Tr("Protections Settings"))
 
         protections_log = true
-        protection:toggle(Translate("Log"),{},"",function(on)
+        protection:toggle(Tr("Log"),{},"",function(on)
             util.yield()
             protections_log = on
         end, true)
 
         protections_notification = true
-        protection:toggle(Translate("Notifications"),{},"",function(on)
+        protection:toggle(Tr("Notifications"),{},"",function(on)
             util.yield()
             protections_notification = on
         end, true)
@@ -1239,37 +1247,37 @@ util.require_natives(1672190175)
 
         Profile = function(mode)
             ProfileOff(mode)
-            if mode == "gigachad" then
-                for _,path in pairs(profiles["gigachad"]) do
-                    SetPathVal(path,true)
-                end
-                for _,ref in pairs(profiles["script"]) do
-                    menu.set_value(ref,true)
-                end
-            elseif mode == "undetected" then
+            if mode ~= "job" then
                 for _,path in pairs(profiles["undetected"]) do
                     SetPathVal(path,true)
                 end
                 for _,ref in pairs(profiles["script"]) do
                     menu.set_value(ref,true)
                 end
-            elseif mode == "pvp" then
-                for _,path in pairs(profiles["pvp"]) do
-                    SetPathVal(path,true)
+                if mode == "rockstar_admin" then
+                    for _,path in pairs(profiles["rockstar_admin"]) do
+                        SetPathVal(path,true)
+                    end
+                    for _,ref in pairs(profiles["script"]) do
+                        menu.set_value(ref,true)
+                    end
+                elseif mode == "fight" then
+                    for _,path in pairs(profiles["fight"]) do
+                        SetPathVal(path,true)
+                    end
+                    menu.set_value(auto_bst,true)
                 end
-                menu.trigger_command(regen_all)
-                menu.set_value(auto_bst,true)
             end
         end
 
         ProfileOff = function(mode)
-            if mode ~= "gigachad" then
-                for _,path in pairs(profiles["gigachad"]) do
+            if mode ~= "rockstar_admin" then
+                for _,path in pairs(profiles["rockstar_admin"]) do
                     SetPathVal(path,false)
                 end
             end
-            if mode ~= "pvp" then
-                for _,path in pairs(profiles["pvp"]) do
+            if mode ~= "fight" then
+                for _,path in pairs(profiles["fight"]) do
                     SetPathVal(path,false)
                 end
             end
@@ -1277,7 +1285,7 @@ util.require_natives(1672190175)
                 for _,path in pairs(profiles["undetected"]) do
                     SetPathVal(path,false)
                 end
-                if mode ~= gigachad then
+                if mode ~= rockstar_admin then
                     for _,ref in pairs(profiles["script"]) do
                         menu.set_value(ref,false)
                     end
@@ -1285,31 +1293,31 @@ util.require_natives(1672190175)
             end
         end
 
-        profile:action(Translate("Rockstar Admin"),{},Translate("Turn on all useful features so nobody can disturb you."),function()
-            Profile("gigachad")
+        profile:action(Tr("Rockstar Admin"),{},Tr("Turn on all useful features so nobody can disturb you."),function()
+            Profile("rockstar_admin")
             if notifications_enabled then
-                Notify(Translate("Profile").." : "..Translate("Rockstar Admin"),false)
+                Notify(Tr("Profile").." : "..Tr("Rockstar Admin"),false)
             end
         end)
 
-        profile:action(Translate("Undetected"),{},Translate("Similar to Rockstar Admin but without the features that can trigger modder detections."),function()
+        profile:action(Tr("Undetected"),{},Tr("Similar to Rockstar Admin but without the features that can trigger modder detections."),function()
             Profile("undetected")
             if notifications_enabled then
-                Notify(Translate("Profile").." : "..Translate("Undetected"),false)
+                Notify(Tr("Profile").." : "..Tr("Undetected"),false)
             end
         end)
 
-        profile:action(Translate("Job & Heists"),{},Translate("Everything is turned off, you are now 'legit'."),function()
+        profile:action(Tr("Job & Heists"),{},Tr("Everything is turned off, you are now 'legit'."),function()
             Profile("job")
             if notifications_enabled then
-                Notify(Translate("Profile").." : "..Translate("Job & Heists"),false)
+                Notify(Tr("Profile").." : "..Tr("Job & Heists"),false)
             end
         end)
 
-        profile:action(Translate("Fight"),{},Translate("Turn on Infinite Ammo, Never Wanted, No Recoil, No Spread and Thermal Scope."),function()
-            Profile("pvp")
+        profile:action(Tr("Fight"),{},Tr("Turn on Infinite Ammo, Never Wanted, No Recoil, No Spread and Thermal Scope."),function()
+            Profile("fight")
             if notifications_enabled then
-                Notify(Translate("Profile").." : "..Translate("Fight"),false)
+                Notify(Tr("Profile").." : "..Tr("Fight"),false)
             end
         end)
 
@@ -1349,6 +1357,7 @@ util.require_natives(1672190175)
             "Online>Chat>Log Chat Messages>Log.txt",
             "Online>Chat>Log Chat Messages>Console",
             "Online>Reveal Off The Radar Players",
+            "Online>Reveal Invisible Players",
             "Online>Reactions>RID Join Reactions>Notification",
             "Online>Reactions>RID Join Reactions>Block",
             "Online>Reactions>RID Join Reactions>Write To Log File",
@@ -1368,9 +1377,9 @@ util.require_natives(1672190175)
             "Online>Reactions>Host Change Reactions>Write To Console",
         }
 
-        profile:divider(Translate("Profile Features"))
+        profile:divider(Tr("Profile Features"))
 
-        profile_editor = profile:list(Translate("Profile Editor"))
+        profile_editor = profile:list(Tr("Profile Editor"))
 
             local profile_list = {}
             local profile_list_c = 0
@@ -1388,8 +1397,8 @@ util.require_natives(1672190175)
                     if ext == "txt" then
                         profile_list[profile_list_c+1] = profile_editor:list(filename,{},"",function() end)
 
-                            profile_list[profile_list_c+1]:divider(Translate("Import").." : "..filename)
-                            profile_list[profile_list_c+1]:action(Translate("Select Features"),{},"",function()
+                            profile_list[profile_list_c+1]:divider(Tr("Import").." : "..filename)
+                            profile_list[profile_list_c+1]:action(Tr("Select Features"),{},"",function()
                                 if not custom_profile_running then
                                     custom_profile_running = true
                                     local file = io.open(profiles_dir.."\\"..filename..".txt", "r")
@@ -1404,15 +1413,15 @@ util.require_natives(1672190175)
                                     custom_profile_features = selected_text
                                     file:close()
                                     DisplayProfilesFeatures(true)
-                                    Notify(Translate("Features From Profile ")..filename..Translate(" selected !"),false)
-                                    menu.set_menu_name(save_profile_features, Translate("Features From : ")..filename)
+                                    Notify(Tr("Features From Profile ")..filename..Tr(" selected !"),false)
+                                    menu.set_menu_name(save_profile_features, Tr("Features From : ")..filename)
                                     custom_profile_running = false
                                 else
                                     Notify("Program is running wait a few seconds then retry.")
                                 end
                             end)
                     
-                            profile_list[profile_list_c+1]:action(Translate("Select Appearance"),{},"",function()
+                            profile_list[profile_list_c+1]:action(Tr("Select Appearance"),{},"",function()
                                 if not custom_profile_running then
                                     custom_profile_running = true
                                     local file = io.open(profiles_dir.."\\"..filename..".txt", "r")
@@ -1424,15 +1433,15 @@ util.require_natives(1672190175)
                                     custom_profile_appearance = "Stand\n\t"..selected_text
                                     file:close()
                                     DisplayProfilesFeatures(true)
-                                    Notify(Translate("Appearance From Profile ")..filename..Translate(" selected !"),false)
-                                    menu.set_menu_name(save_profile_appearance, Translate("Appearance From : ")..filename)
+                                    Notify(Tr("Appearance From Profile ")..filename..Tr(" selected !"),false)
+                                    menu.set_menu_name(save_profile_appearance, Tr("Appearance From : ")..filename)
                                     custom_profile_running = false
                                 else
                                     Notify("Program is running wait a few seconds then retry.")
                                 end
                             end)
             
-                            profile_list[profile_list_c+1]:action(Translate("Select Lua Settings"),{},"",function()
+                            profile_list[profile_list_c+1]:action(Tr("Select Lua Settings"),{},"",function()
                                 if not custom_profile_running then
                                     custom_profile_running = true
                                     local file = io.open(profiles_dir.."\\"..filename..".txt", "r")
@@ -1447,32 +1456,32 @@ util.require_natives(1672190175)
                                     custom_profile_lua = selected_text
                                     file:close()
                                     DisplayProfilesFeatures(true)
-                                    Notify(Translate("Lua Settings From Profile ")..filename..Translate(" selected !"),false)
-                                    menu.set_menu_name(save_profile_lua, Translate("Lua Settings From : ")..filename)
+                                    Notify(Tr("Lua Settings From Profile ")..filename..Tr(" selected !"),false)
+                                    menu.set_menu_name(save_profile_lua, Tr("Lua Settings From : ")..filename)
                                     custom_profile_running = false
                                 else
                                     Notify("Program is running wait a few seconds then retry.")
                                 end
                             end)
 
-                            profile_list[profile_list_c+1]:divider(Translate("Load and Save"))
+                            profile_list[profile_list_c+1]:divider(Tr("Load and Save"))
                             
                             local filename_format = filename:gsub("%s", ""):gsub("%p", ""):lower()
-                            profile_list[profile_list_c+1]:action(Translate("Save Profile"),{},"",function()
+                            profile_list[profile_list_c+1]:action(Tr("Save Profile"),{},"",function()
                                 if not custom_profile_running then
                                     custom_profile_running = true
                                     menu.trigger_commands("save"..filename_format)
-                                    Notify(filename..Translate(" profile saved !"),false)
+                                    Notify(filename..Tr(" profile saved !"),false)
                                     custom_profile_running = false
                                 else
                                     Notify("Program is running wait a few seconds then retry.")
                                 end
                             end)
 
-                            profile_list[profile_list_c+1]:action(Translate("Load Profile"),{},"",function()
+                            profile_list[profile_list_c+1]:action(Tr("Load Profile"),{},"",function()
                                 if not custom_profile_running then
                                     custom_profile_running = true
-                                    Notify(filename..Translate(" profile loaded !"),false)
+                                    Notify(filename..Tr(" profile loaded !"),false)
                                     custom_profile_running = false
                                     menu.trigger_commands("load"..filename_format)
                                 else
@@ -1500,25 +1509,25 @@ util.require_natives(1672190175)
                 if not state then
                     menu.trigger_command(save_profile_input, "")
                     custom_profile_features = nil
-                    menu.set_menu_name(save_profile_features, Translate("Features From : ").."None")
+                    menu.set_menu_name(save_profile_features, Tr("Features From : ").."None")
                     custom_profile_appearance = nil
-                    menu.set_menu_name(save_profile_appearance, Translate("Appearance From : ").."None")
+                    menu.set_menu_name(save_profile_appearance, Tr("Appearance From : ").."None")
                     custom_profile_lua = nil
-                    menu.set_menu_name(save_profile_lua, Translate("Lua Settings From : ").."None")
+                    menu.set_menu_name(save_profile_lua, Tr("Lua Settings From : ").."None")
                 end
             end
             
             local explaintation_mess = "In each profile you can pick up the part you want to. For exemple :\nProfile1 has good appearance but bad features enabled and Profile2 has bad appearance but good features.\nSo you can Select Features of Profile2 and Select Appearance of Profile1 then\nYou can save it in Profile Editor>Save Custom Profile ! :D"
-            profile_editor:action(Translate("Explaination"),{},explaintation_mess,function()
+            profile_editor:action(Tr("Explaination"),{},explaintation_mess,function()
                 Notify(explaintation_mess,false)
                 util.toast(explaintation_mess, TOAST_CONSOLE)
             end)
 
-            profile_editor:action(Translate("Profile Menu Shortcut"),{},"Stand>"..Translate("Profiles"),function()
+            profile_editor:action(Tr("Profile Menu Shortcut"),{},"Stand>"..Tr("Profiles"),function()
                 menu.focus(menu.ref_by_path("Stand>Profiles>Create Profile"))
             end)
 
-            profile_refresh_button = profile_editor:action(Translate("Refresh"),{},"",function()
+            profile_refresh_button = profile_editor:action(Tr("Refresh"),{},"",function()
                 if not custom_profile_running then
                     custom_profile_running = true
                     RefreshProfiles()
@@ -1528,11 +1537,11 @@ util.require_natives(1672190175)
                 end
             end)
             
-            save_profile = profile_editor:list(Translate("Save Custom Profile"))
-            save_profile_features = save_profile:action(Translate("Features From : ").."None",{},"",function() end)
-            save_profile_appearance = save_profile:action(Translate("Appearance From : ").."None",{},"",function() end)
-            save_profile_lua = save_profile:action(Translate("Lua Settings From : ").."None",{},"",function() end)
-            save_profile_input = save_profile:text_input(Translate("Save Custom Profile"),{"mehscriptsaveprofile"},"",function(profile_name)
+            save_profile = profile_editor:list(Tr("Save Custom Profile"))
+            save_profile_features = save_profile:action(Tr("Features From : ").."None",{},"",function() end)
+            save_profile_appearance = save_profile:action(Tr("Appearance From : ").."None",{},"",function() end)
+            save_profile_lua = save_profile:action(Tr("Lua Settings From : ").."None",{},"",function() end)
+            save_profile_input = save_profile:text_input(Tr("Save Custom Profile"),{"mehscriptsaveprofile"},"",function(profile_name)
                 util.yield()
                 if profile_name and profile_name ~= "" then
                     if not custom_profile_running then
@@ -1555,7 +1564,7 @@ util.require_natives(1672190175)
                         end
                         custom_profile:write(custom_profile_features..custom_profile_appearance..custom_profile_lua)
                         custom_profile:close()
-                        Notify(profile_name..Translate(" profile saved !"),false)
+                        Notify(profile_name..Tr(" profile saved !"),false)
                         RefreshProfiles()
                         menu.focus(profile_refresh_button)
                         custom_profile_running = false
@@ -1566,10 +1575,10 @@ util.require_natives(1672190175)
             end)
             
             DisplayProfilesFeatures(false)
-            profile_editor:divider(Translate("Your Profiles"))
+            profile_editor:divider(Tr("Your Profiles"))
             SelectProfiles()
 
-        profile:action(Translate("Apply Recommended Profile"),{},Translate("Will apply recommended profile.\nMake sure to have a backup of your profile."),function()
+        profile:action(Tr("Apply Recommended Profile"),{},Tr("Will apply recommended profile.\nMake sure to have a backup of your profile."),function()
             Profile("undetected")
             Protections("Best",0)
             for _,path in pairs(path_to_click) do
@@ -1593,42 +1602,34 @@ util.require_natives(1672190175)
 
         -- settings
 
-            misc:divider(Translate("Settings"))
+            misc:divider(Tr("Settings"))
 
             notifications_mode = "Stand"
-            misc:list_select(Translate("Notifications Mode"),{},"",{"Stand",Translate("Help Message")},1,function(selected_mode)
+            misc:list_select(Tr("Notifications Mode"),{},"",{"Stand",Tr("Help Message")},1,function(selected_mode)
                 notifications_mode = selected_mode
             end)
 
             notifications_enabled = true
-            notifications_toggle = misc:toggle(Translate("Notifications"),{},"",function(on)
+            notifications_toggle = misc:toggle(Tr("Notifications"),{},"",function(on)
                 util.yield()
                 notifications_enabled = on
             end, true)
 
         -- about
 
-            misc:divider(Translate("About"))
-            misc:action(Translate("Version").." "..version,{},"",function() end)
+            misc:divider(Tr("About"))
+            misc:action(Tr("Version").." "..version,{},"",function() end)
 
             -- credits
 
-                local credits = misc:list(Translate("Credits"))
-                credits:divider("Akatozi. ( Dev )")
-                credits:divider("Lance ( Aimbot )")
+                local credits = misc:list(Tr("Credits"))
+                credits:divider("Made by Akatozi.")
+                credits:action("Lance",{},"I took his aimbot then improved it.",function() end)
+                credits:action("Scriptcat",{},"I took his Orbital Strike on Waipont to make it work on players and changed it a bit.",function() end)
 
             -- links
 
                 misc:hyperlink("Github","https://github.com/akat0zi/mehScript")
-
-    async_http.init("raw.githubusercontent.com","/akat0zi/mehScript/main/news_message",function(content)
-        if content ~= "404: Not Found" then
-            local news_message = string.gsub(content, "\n$", "")
-            main:action(Translate("News Message"),{},news_message,function() Notify(news_message,false) end)
-            Notify(news_message,false)
-        end
-    end)
-    async_http.dispatch()
 
 --===============--
 -- Player Menu
@@ -1647,9 +1648,9 @@ util.require_natives(1672190175)
     player_spectate = {}
 
     Crash = function(pid,name)
-        if menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction"))) then
+        if menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Tr("Attack")..">"..Tr("Add Block Join Reaction"))) then
             menu.trigger_commands("historyblock"..name.." on")
-            Notify(Translate("Block Join Reaction Added to ")..name..".",false)
+            Notify(Tr("Block Join Reaction Added to ")..name..".",false)
         end
         for _,cmd in pairs(attack["crash"]) do
             if players.exists(pid) and players.get_name(pid) == name then
@@ -1666,49 +1667,103 @@ util.require_natives(1672190175)
 
         -- griefing
 
-            local griefing = player:list(Translate("Griefing"),{},"")
+            local griefing = player:list(Tr("Griefing"),{},"")
 
-            local bounty = griefing:list(Translate("Bounty"),{},"")
-            local bounty_amount = 10000
-            bounty:toggle_loop(Translate("Auto Bounty"),{},Translate("Loop that place a bounty on the player."),function()
-                if InSession() then
-                    if players.get_bounty(pid) ~= bounty_amount then
-                        menu.trigger_commands("bounty"..player_name.." "..bounty_amount)
+            local bounty = griefing:list(Tr("Bounty"),{},"")
+                local bounty_amount = 10000
+                bounty:toggle_loop(Tr("Auto Bounty"),{},Tr("Loop that place a bounty on the player."),function()
+                    if InSession() then
+                        if players.get_bounty(pid) ~= bounty_amount then
+                            menu.trigger_commands("bounty"..player_name.." "..bounty_amount)
+                        end
+                    end
+                    util.yield(1000)
+                end)
+
+                bounty:slider(Tr("Bounty Amount"),{"mehbountyamount"},Tr("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
+                    bounty_amount = amount
+                end)
+
+            tactical_nuke = griefing:list(Tr("Tactical Nuke"))
+                
+                SendNuke = function(pid,nuke_session,height,owned)
+                    if not players.is_in_interior(pid) then
+                        if not players.is_godmode(pid) then
+                            Notify("Tactical nuke incoming !")
+                            AUDIO.PLAY_SOUND_FROM_ENTITY(-1, "Air_Defences_Activated", PLAYER.GET_PLAYER_PED(pid), "DLC_sum20_Business_Battle_AC_Sounds", true, true)
+                            util.yield(3000)
+                            if not players.is_in_interior(pid) and not players.is_godmode(pid) then
+                                local tactical_nuke_height_used = 1
+                                local p_ped = PLAYER.GET_PLAYER_PED(pid)
+                                local p_vec = PED.GET_VEHICLE_PED_IS_IN(p_ped,false)
+                                util.toast(ENTITY.GET_ENTITY_SPEED(p_vec)..'\n'..ENTITY.GET_ENTITY_SPEED(p_ped))
+                                if ENTITY.GET_ENTITY_SPEED(p_vec) < 5 and ENTITY.GET_ENTITY_SPEED(p_ped) < 5 then
+                                    tactical_nuke_height_used = height
+                                end
+                                local pos = players.get_position(pid)
+                                if not owned then
+                                    for a = 1, tactical_nuke_height_used do
+                                        FIRE.ADD_EXPLOSION(pos.x, pos.y, pos.z + tactical_nuke_height_used * 5 - a * 5, 29, 10, true, false, 1, false)
+                                        FIRE.ADD_EXPLOSION(pos.x, pos.y, pos.z + tactical_nuke_height_used * 5 - a * 5, 59, 10, true, false, 1, false)
+                                        util.yield(20)
+                                    end
+                                else
+                                    local player_ped = players.user_ped()
+                                    for i = 1, tactical_nuke_height_used do
+                                        FIRE.ADD_OWNED_EXPLOSION(player_ped, pos.x, pos.y, pos.z + tactical_nuke_height_used - i, 29, 10, true, false, 1)
+                                        FIRE.ADD_OWNED_EXPLOSION(player_ped, pos.x, pos.y, pos.z + tactical_nuke_height_used - i, 59, 10, true, false, 1)
+                                        util.yield(20)
+                                    end
+                                end
+                            end
+                        elseif not nuke_session then
+                            Notify(player_name.." "..Tr("is godmode."),false)
+                        end
+                    elseif not nuke_session then
+                        Notify(player_name.." "..Tr("is in interior."),false)
                     end
                 end
-                util.yield(1000)
-            end)
 
-            bounty:slider(Translate("Bounty Amount"),{"mehbountyamount"},Translate("Chose the amount of the bounty offered automatically."),1,10000,10000,1000,function(amount)
-                bounty_amount = amount
-            end)
-
-            if pid ~= players.user() then
-                griefing:toggle_loop(Translate("Freeze"),{},Translate("Better than the Stand one."),function()
-                    if players.exists(pid) then
-                        util.trigger_script_event(1 << pid,{0x4868BC31,pid,0,0,0,0,0}) -- credits to jinx
-                        TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
-                        menu.trigger_commands("freeze"..player_name.." on")
-                    end
-                    util.yield()
-                end,function()
-                    if players.exists(pid) then
-                        menu.trigger_commands("freeze"..player_name.." off")
-                    end
+                local tactical_nuke_owned = false
+                tactical_nuke:action(Tr("Send Tactical Nuke"), {}, "", function()
+                    SendNuke(pid,false,tactical_nuke_height,tactical_nuke_owned)
                 end)
+
+                tactical_nuke:toggle(Tr("Say Who Sent it"), {}, "", function(on)
+                    tactical_nuke_owned = on
+                end)
+
+                tactical_nuke_height = 10
+                tactical_nuke:slider(Tr("Nuke Height"), {}, "", 1, 50, tactical_nuke_height, 1,function(s)
+                    tactical_nuke_height = s
+                end)
+
+            griefing:toggle_loop(Tr("Freeze"),{},Tr("Better than the Stand one."),function()
+                if players.exists(pid) then
+                    util.trigger_script_event(1 << pid,{0x4868BC31,pid,0,0,0,0,0}) -- credits to jinx
+                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+                    menu.trigger_commands("freeze"..player_name.." on")
+                end
+                util.yield()
+            end,function()
+                if players.exists(pid) then
+                    menu.trigger_commands("freeze"..player_name.." off")
+                end
+            end)
 
         -- attack
 
-            local attack = player:list(Translate("Attack"),{},"")
+        if pid ~= players.user() then
+            local attack = player:list(Tr("Attack"),{},"")
 
-            local kick = attack:list(Translate("Kick"))
+            local kick = attack:list(Tr("Kick"))
 
-            kick:action_slider(Translate("Kick Player"),{},"",{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
+            kick:action_slider(Tr("Kick Player"),{},"",{Tr("Hard (Karma)"),Tr("Safe (Detectable)")},function(method)
                 if method == 1 then
-                    Notify(Translate("Attempt to kick ")..player_name,false)
+                    Notify(Tr("Attempt to kick ")..player_name,false)
                     Kick(pid, 1)
                 else
-                    Notify(Translate("Attempt to kick ")..player_name.."\n"..Translate("Should take less then 10 sec !"),false)
+                    Notify(Tr("Attempt to kick ")..player_name.."\n"..Tr("Should take less then 10 sec !"),false)
                     Kick(pid, 2)
                 end
             end)
@@ -1728,18 +1783,18 @@ util.require_natives(1672190175)
                 return org_members
             end
 
-            kick:action_slider(Translate("Kick Organisation"),{},Translate("Kick all organisation members."),{Translate("Hard (Karma)"),Translate("Safe (Detectable)")},function(method)
+            kick:action_slider(Tr("Kick Organisation"),{},Tr("Kick all organisation members."),{Tr("Hard (Karma)"),Tr("Safe (Detectable)")},function(method)
                 org_members = GetOrgMembers(pid)
                 if #org_members>1 then
-                    Notify(Translate("Attempt to kick ")..player_name.."'s"..Translate(" organisation."),false)
+                    Notify(Tr("Attempt to kick ")..player_name.."'s"..Tr(" organisation."),false)
                 else
-                    Notify(Translate("Attempt to kick ")..player_name,false)
+                    Notify(Tr("Attempt to kick ")..player_name,false)
                 end
-                local add_block_join_reaction = menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")))
+                local add_block_join_reaction = menu.get_value(menu.ref_by_path("Players>"..players.get_name_with_tags(pid)..">"..Tr("Attack")..">"..Tr("Add Block Join Reaction")))
                 for _,player_to_kick in pairs(org_members) do
                     if player_to_kick ~= players.user() then
                         if add_block_join_reaction then
-                            menu.set_value(menu.ref_by_path("Players>"..players.get_name_with_tags(player_to_kick)..">"..Translate("Attack")..">"..Translate("Add Block Join Reaction")),add_block_join_reaction)
+                            menu.set_value(menu.ref_by_path("Players>"..players.get_name_with_tags(player_to_kick)..">"..Tr("Attack")..">"..Tr("Add Block Join Reaction")),add_block_join_reaction)
                         end
                         util.yield(10)
                         if not player_to_kick == pid then
@@ -1750,28 +1805,28 @@ util.require_natives(1672190175)
                 end
             end)
 
-            kick:text_input(Translate("Kick Message"),{"mehkickmessage"},Translate("Will send a private chat message to the player when kicking him."),function(str) 
+            kick:text_input(Tr("Kick Message"),{"mehkickmessage"},Tr("Will send a private chat message to the player when kicking him."),function(str) 
                 kick_message = str
             end)
 
             local preset_kick_message_table = {"Stand On Top !","You Suck Buddy ...","Taste the GIGACHAD power !","Can't Beat Kiddion's VIP Menu","10$ Stand>120$ VIP 2TAKE1","A femboy is a slang term for a young, usually cisgender male who displays traditionally feminine characteristics. While the term can be used as an insult, some in the LGBTQ community use the term positively to name forms of gender."}
-            kick:list_action(Translate("Preset Message"),{},"",preset_kick_message_table,function(i)
+            kick:list_action(Tr("Preset Message"),{},"",preset_kick_message_table,function(i)
                 menu.trigger_commands("mehkickmessage"..player_name.." "..preset_kick_message_table[i])
             end)
 
-            local crash = attack:list(Translate("Crash"))
+            local crash = attack:list(Tr("Crash"))
 
-            crash:action(Translate("Crash Player"),{},"",function()
-                Notify(Translate("Attempt to crash ")..player_name,false)
+            crash:action(Tr("Crash Player"),{},"",function()
+                Notify(Tr("Attempt to crash ")..player_name,false)
                 Crash(pid, player_name)
             end)
 
-            crash:action(Translate("Crash Organisation"),{},Translate("Crash all organisation members."),function()
+            crash:action(Tr("Crash Organisation"),{},Tr("Crash all organisation members."),function()
                 org_members = GetOrgMembers(pid)
                 if #org_members>1 then
-                    Notify(Translate("Attempt to crash ")..player_name..Translate(" organisation."),false)
+                    Notify(Tr("Attempt to crash ")..player_name..Tr(" organisation."),false)
                 else
-                    Notify(Translate("Attempt to crash ")..player_name,false)
+                    Notify(Tr("Attempt to crash ")..player_name,false)
                 end
                 for _,player_to_crash in pairs(org_members) do
                     if player_to_crash ~= players.user() then
@@ -1780,8 +1835,8 @@ util.require_natives(1672190175)
                 end
             end)
 
-            attack:action(Translate("Nuke Button"),{},Translate("Take all risks to remove him.\nNote: You may be karma."),function()
-                Notify(Translate("Nuke on ")..player_name,false)
+            attack:action(Tr("Nuke Button"),{},Tr("Take all risks to remove him.\nNote: You may be karma."),function()
+                Notify(Tr("Nuke on ")..player_name,false)
                 Crash(pid, player_name)
                 util.yield(2000)
                 if players.get_name(pid) == player_name then
@@ -1789,10 +1844,10 @@ util.require_natives(1672190175)
                 end
             end)
 
-            attack:toggle(Translate("Add Block Join Reaction"),{},Translate("When removing the player, it'll add him the block join reaction so he will never join you again."),function()
+            attack:toggle(Tr("Add Block Join Reaction"),{},Tr("When removing the player, it'll add him the block join reaction so he will never join you again."),function()
             end)
 
-            player:toggle(Translate("Spectate"),{"mehspectate"},"",function(on)
+            player:toggle(Tr("Spectate"),{"mehspectate"},"",function(on)
                 if on then
                     if #player_spectate ~= 0 then
                         menu.trigger_commands("mehspectate"..player_spectate[1].." off")
@@ -1821,3 +1876,15 @@ end)
 players.on_join(PlayerMenu)
 players.on_join(Check)
 players.dispatch_on_join()
+
+if SCRIPT_MANUAL_START then
+    async_http.init("raw.githubusercontent.com","/akat0zi/mehScript/main/news_message",function(content)
+        if content ~= "404: Not Found" then
+            local news_message = string.gsub(content, "\n$", "")
+            main:action(Tr("News Message"),{},news_message,function() Notify(news_message,false) end)
+            Notify(news_message,false)
+        end
+    end)
+    async_http.dispatch()
+    AUDIO.PLAY_SOUND(-1, "Virus_Eradicated", "LESTER1A_SOUNDS", 0, 0, 1)
+end
