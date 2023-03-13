@@ -1,4 +1,4 @@
-local version = "0.8802"
+local version = "0.881"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -230,15 +230,11 @@ util.require_natives(1672190175)
             ["Head"] = "Tête",
             ["Chest"] = "Torse",
             ["Pelvis"] = "Bassin",
-            ["Through Walls Settings"] = "Options à Travers le Mur",
-            ["Shoot Through Walls"] = "Tirer à Traver le Mur",
-            ["ESP When Behind Walls"] = "ESP Quand Derrière un Mur",
-            ["Works only if Shoot Through Walls is enabled."] = "Fonctionne seulement si Tirer à Traver le Mur est activé.",
             ["Aimbot : No area selected !"] = "Aimbot : Pas de zone sélectionnée !",
             ["Players"] = "Joueurs",
             ["NPCS"] = "PNJ",
             ["You are already in the session."] = "Vous êtes déjà dans la session.",
-            ["Should take less than 10 sec !"] = "Ca devrait prendre moins de 10 sec !",
+            ["Should take around 10 sec !"] = "Ca devrait prendre environ 10 sec !",
             ["Fully Invisible"] = "Complètement Invisible",
             ["Tactical Nuke"] = "Bombe Nucléaire",
             ["Send Tactical Nuke"] = "Lancer Bombe Nucléaire",
@@ -376,223 +372,8 @@ util.require_natives(1672190175)
                 Notify(Tr("Levitation Mode").." : "..Tr("No Clip"),false)
             end)
 
-        -- weapons
-
-            local weaponm = self:list(Tr("Weapons"))
-
-            local aimbot = weaponm:list(Tr("Aimbot"))
-
-                -- Original made by Lance but improved a lot by myself
-                handle_ptr = memory.alloc(13*8)
-                local function pid_to_handle(pid)
-                    NETWORK.NETWORK_HANDLE_FROM_PLAYER(pid, handle_ptr, 13)
-                    return handle_ptr
-                end
-
-                local function get_aimbot_target()
-                    local cur_tar = 0
-                    for k,v in pairs(entities.get_all_peds_as_handles()) do
-                        local target_this = true
-                        local player_pos = players.get_position(players.user())
-                        local ped_pos = ENTITY.GET_ENTITY_COORDS(v, true)
-                        if players.user_ped() ~= v and not ENTITY.IS_ENTITY_DEAD(v) then
-                            if MISC.GET_DISTANCE_BETWEEN_COORDS(player_pos.x, player_pos.y, player_pos.z, ped_pos.x, ped_pos.y, ped_pos.z, true) <= 1500 then
-                                if not PED.IS_PED_FACING_PED(players.user_ped(), v, aimbot_fov) then
-                                    target_this = false
-                                    if aimbot_esp_behind_walls then
-                                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                                    end
-                                else 
-                                    if not aimbot_target_peds then
-                                        if not PED.IS_PED_A_PLAYER(v) then
-                                            target_this = false
-                                        end
-                                    end
-                                    if not aimbot_target_players then
-                                        if PED.IS_PED_A_PLAYER(v) then
-                                            target_this = false
-                                        end
-                                    end
-                                    if not aimbot_target_vehicle then
-                                        if PED.IS_PED_IN_ANY_VEHICLE(v, true) then 
-                                            target_this = false
-                                        end
-                                    end
-                                    if not aimbot_target_godmode then
-                                        if not ENTITY.GET_ENTITY_CAN_BE_DAMAGED(v) then 
-                                            target_this = false 
-                                        end
-                                    end
-                                    if not aimbot_target_friends then
-                                        if PED.IS_PED_A_PLAYER(v) then
-                                            local hdl = pid_to_handle(NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(v))
-                                            if NETWORK.NETWORK_IS_FRIEND(hdl) then
-                                                target_this = false 
-                                            end
-                                        end
-                                    end
-                                    if not aimbot_shoot_walls then
-                                        if not ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), v, 17) then
-                                            target_this = false
-                                        end
-                                    end
-                                    if target_this then
-                                        cur_tar = v
-                                        if aimbot_esp_behind_walls and aimbot_shoot_walls and not ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), v, 17) then
-                                            if not PED.IS_PED_A_PLAYER(v) then
-                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Low Latency Rendering"))
-                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                                            else
-                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Low Latency Rendering"))
-                                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                                            end
-                                        else
-                                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                                        end
-                                    end
-                                end
-                            elseif aimbot_esp_behind_walls then
-                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Low Latency Rendering"))
-                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                            end
-                        end
-                    end
-                    return cur_tar
-                end
-
-                local aimbot_area_selected = {}
-                aimbot:toggle_loop(Tr("Aimbot"),{},"", function()
-                    local target = get_aimbot_target()
-                    if target ~= 0 then
-                        local aimbot_selected_area = aimbot_area_selected[math.random(#aimbot_area_selected)]
-                        local target_pos = PED.GET_PED_BONE_COORDS(target, aimbot_selected_area, 0, 0, 0)
-                        if aimbot_show_taget then
-                            local ped_pos = PED.GET_PED_BONE_COORDS(target, 31086, 0, 0, 0)
-                            GRAPHICS.DRAW_MARKER(0, ped_pos.x, ped_pos.y, ped_pos.z + 1.5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 255, 0, 0, 100, false, true, 2, false, 0, 0, false)
-                        end
-                        if PED.IS_PED_SHOOTING(players.user_ped()) then
-                            if aimbot_selected_area then
-                                local shot_pos
-                                if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), target, 17) then
-                                    shot_pos = PED.GET_PED_BONE_COORDS(players.user_ped(), 57005, -0.01, 0, 0)
-                                else
-                                    shot_pos = PED.GET_PED_BONE_COORDS(target, aimbot_selected_area, -0.1, 0, 0)
-                                end
-                                local wep = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
-                                MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS_IGNORE_ENTITY(shot_pos.x, shot_pos.y, shot_pos.z, target_pos.x, target_pos.y, target_pos.z, WEAPON.GET_WEAPON_DAMAGE(wep, 0) * (aimbot_damage/100), true, wep, players.user_ped(), false, false, 10000, PED.GET_VEHICLE_PED_IS_IN(target, false))
-                            else
-                                Notify("Aimbot : No area selected !")
-                            end
-                        end
-                    end
-                end, function()
-                    if aimbot_esp_behind_walls then
-                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                        menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                    end
-                end)
-                
-                aimbot_fov = 10
-                aimbot:slider(Tr("FOV"), {"mehaimbotfov"}, Tr("High value may result in focusing wrong target."), 1, 180, aimbot_fov, 1, function(s)
-                    aimbot_fov = s
-                end)
-
-                aimbot_damage = 100
-                aimbot:slider(Tr("Weapon Damage %"), {"mehaimbotdamage"}, "", 1, 1000, aimbot_damage, 1, function(s)
-                    aimbot_damage = s
-                end)
-
-                aimbot_area = aimbot:list(Tr("Area to Shoot"))
-
-                    aimbot_remove_area = function(boneID)
-                        for i, v in ipairs(aimbot_area_selected) do
-                            if v == boneID then
-                                table.remove(aimbot_area_selected, i)
-                                break
-                            end
-                        end
-                    end
-
-                    table.insert(aimbot_area_selected, 31086)
-                    local aimbot_area_message = Tr("If you select several options, it will chose one randomly everytime you shoot.")
-                    aimbot_area:toggle(Tr("Head"),{},aimbot_area_message,function(on)
-                        if on then
-                            table.insert(aimbot_area_selected, 31086)
-                        else
-                            aimbot_remove_area(31086)
-                        end
-                    end, true)
-
-                    aimbot_area:toggle(Tr("Chest"),{},aimbot_area_message,function(on)
-                        if on then
-                            table.insert(aimbot_area_selected, 24818)
-                        else
-                            aimbot_remove_area(24818)
-                        end
-                    end)
-
-                    aimbot_area:toggle(Tr("Pelvis"),{},aimbot_area_message,function(on)
-                        if on then
-                            table.insert(aimbot_area_selected, 11816)
-                        else
-                            aimbot_remove_area(11816)
-                        end
-                    end)
-
-                aimbot_through_walls = aimbot:list(Tr("Through Walls Settings"))
-                    aimbot_through_walls:toggle(Tr("Shoot Through Walls"),{},"", function(on)
-                        aimbot_shoot_walls = on
-                        if not on and aimbot_esp_behind_walls then
-                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                            menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                        end
-                    end)
-
-                    if stand_edition >= 2 then
-                        aimbot_through_walls:toggle(Tr("ESP When Behind Walls"),{},Tr("Works only if Shoot Through Walls is enabled."), function(on)
-                            aimbot_esp_behind_walls = on
-                            if not on then
-                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>NPC ESP>Bone ESP>Disabled"))
-                                menu.trigger_command(menu.ref_by_path("World>Inhabitants>Player ESP>Bone ESP>Disabled"))
-                            end
-                        end)
-                    end
-                
-                aimbot_taget_settings = aimbot:list(Tr("Target Settings"))
-
-                    aimbot_target_players = true
-                    aimbot_taget_settings:toggle(Tr("Players"),{},"", function(on)
-                        aimbot_target_players = on
-                    end, true)
-
-                    aimbot_taget_settings:toggle(Tr("NPCS"),{},"", function(on)
-                        aimbot_target_peds = on
-                    end)
-
-                    aimbot_target_vehicle = true
-                    aimbot_taget_settings:toggle(Tr("Inside Vehicle"),{},"", function(on)
-                        aimbot_target_vehicle = on
-                    end, true)
-        
-                    aimbot_target_godmode = true
-                    aimbot_taget_settings:toggle(Tr("Godmode Player"),{},"", function(on)
-                        aimbot_target_godmode = on
-                    end, true)
-                    
-                    aimbot_target_friends = true
-                    aimbot_taget_settings:toggle(Tr("Friends"),{},"", function(on)
-                        aimbot_target_friends = on
-                    end, true)
-                    
-                    aimbot_show_taget = true
-                    aimbot_taget_settings:toggle(Tr("Display Target"),{},"", function(on)
-                        aimbot_show_taget = on
-                    end, true)
-
             local thermal_command = menu.ref_by_path('Game>Rendering>Thermal Vision')
-            weaponm:toggle_loop(Tr("Thermal Scope"),{},Tr("Press E while aiming to activate."),function()
+            self:toggle_loop(Tr("Thermal Scope"),{},Tr("Press E while aiming to activate."),function()
                 local aiming = PLAYER.IS_PLAYER_FREE_AIMING(players.user())
                 if GRAPHICS.GET_USINGSEETHROUGH() and not aiming then
                     menu.trigger_command(thermal_command,'off')
@@ -838,10 +619,10 @@ util.require_natives(1672190175)
                             ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
                         end
                         util.yield()
-                        menu.trigger_commands("buttplug"..name)
+                        menu.trigger_commands("ban"..name)
                         util.yield(200)
                         if players.exists(pid) and players.get_name(pid) == name then
-                            menu.trigger_commands("confusionkick"..name)
+                            menu.trigger_commands("breakup"..name)
                         end
                     elseif method == 2 then
                         menu.trigger_commands("loveletterkick"..name)
@@ -855,7 +636,7 @@ util.require_natives(1672190175)
                             ClickPath("Online>Chat>Bypass Character Filter>Disabled")
                             ClickPath("Online>Chat>Bypass Profanity Filter>Disabled")
                         end
-                        util.yield(7000)
+                        util.yield(10000)
                         if players.exists(pid) and players.get_name(pid) == name then
                             menu.trigger_commands("ban"..name)
                         end
@@ -926,12 +707,12 @@ util.require_natives(1672190175)
             if stand_edition >= 2 then
 				spoof_session_informations = online:toggle(Tr("Spoof Session Informations"),{},Tr("Spoof your session informations so nobody can join you from your R* profile."),function(on)
 					if on then
-						menu.trigger_commands("spoofsession storymode")
+						ClickPath("Online>Spoofing>Session Spoofing>Hide Session>Story Mode")
 						if stand_edition == 3 then
 							ClickPath("Online>Spoofing>Session Spoofing>Session Type>Invalid")
 						end
 					else
-						menu.trigger_commands("spoofsession off")
+						ClickPath("Online>Spoofing>Session Spoofing>Hide Session>Disabled")
 						if stand_edition == 3 then
 							ClickPath("Online>Spoofing>Session Spoofing>Session Type>Not Spoofed")
 						end
@@ -1012,22 +793,6 @@ util.require_natives(1672190175)
                     elseif not menu.get_value(clear_day) then
                         ResetRendering()
                     end
-                end)
-
-                visual_warm = rendering:toggle(Tr("Warm"), {}, "", function(on) -- Skidded from jinxscript because someone asked 🗿
-                    visual = on
-                    if not menu.get_value(visual_warm) then
-                        GRAPHICS.ANIMPOSTFX_STOP_ALL()
-                    return end
-                    while visual do
-                        repeat
-                        GRAPHICS.SET_TIMECYCLE_MODIFIER("mp_bkr_int01_garage")
-                        menu.trigger_commands("shader off")
-                        util.yield()
-                        until GRAPHICS.GET_TIMECYCLE_MODIFIER_INDEX() ~= 728
-                        util.yield()
-                    end
-                    GRAPHICS.SET_TIMECYCLE_MODIFIER("DEFAULT")
                 end)
 
                 rendering:toggle_loop(Tr("Always Clear Weather"),{},Tr("Force clear weather.\nNote: It avoids the snow visual glitch in transitions."),function()
@@ -1117,6 +882,7 @@ util.require_natives(1672190175)
                 "Online>Protections>Events>Raw Network Events>REMOVE_STICKY_BOMB_EVENT",
                 "Online>Protections>Events>Love Letter Kick Blocking Event",
                 "Online>Protections>Events>Modded Damage Event",
+                "Online>Protections>Events>Ragdoll Event",
                 "Online>Reactions>Love Letter Kick Reactions",
             },
 
@@ -1126,7 +892,6 @@ util.require_natives(1672190175)
             },
 
             additional = {
-                "Online>Protections>Buttplug Kick Reactions>Myself>Block",
                 "Online>Protections>Host Kicks>Lessen Host Kicks",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Karma",
                 "Online>Protections>Love Letter & Desync Kicks>Block Love Letter Kicks",
@@ -1137,7 +902,6 @@ util.require_natives(1672190175)
             },
 
             additional_bis = {
-                "Online>Protections>Buttplug Kick Reactions>Someone Else>Block",
                 "Online>Protections>Breakup Kick Reactions>Block",
             },
 
@@ -1148,20 +912,14 @@ util.require_natives(1672190175)
             },
 
             additional_notif = {
-                "Online>Protections>Buttplug Kick Reactions>Myself>Notification",
-                "Online>Protections>Buttplug Kick Reactions>Someone Else>Notification",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Notification",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Someone Else>Notification",
                 "Online>Protections>Love Letter & Desync Kicks>Notification When Love Letter Kicked",
             },
 
             additional_log = {
-                "Online>Protections>Buttplug Kick Reactions>Myself>Write To Console",
-                "Online>Protections>Buttplug Kick Reactions>Someone Else>Write To Console",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Write To Console",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Someone Else>Write To Console",
-                "Online>Protections>Buttplug Kick Reactions>Myself>Write To Log File",
-                "Online>Protections>Buttplug Kick Reactions>Someone Else>Write To Log File",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Myself>Write To Log File",
                 "Online>Protections>Knockoff Breakup Kick Reactions>Someone Else>Write To Log File",
             },
@@ -1640,7 +1398,6 @@ util.require_natives(1672190175)
 
                 local credits = misc:list(Tr("Credits"))
                 credits:divider("Made by Akatozi.")
-                credits:action("Lance",{},"I took his aimbot then improved it.",function() end)
                 credits:action("Scriptcat",{},"I took his Orbital Strike on Waipont to make it work on players and changed it a bit.",function() end)
 
             -- links
@@ -1778,7 +1535,7 @@ util.require_natives(1672190175)
                     Notify(Tr("Attempt to kick ")..player_name,false)
                     Kick(pid, 1)
                 else
-                    Notify(Tr("Attempt to kick ")..player_name.."\n"..Tr("Should take less then 10 sec !"),false)
+                    Notify(Tr("Attempt to kick ")..player_name.."\n"..Tr("Should take around 10 sec !"),false)
                     Kick(pid, 2)
                 end
             end)
