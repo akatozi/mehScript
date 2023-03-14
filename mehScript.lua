@@ -1,4 +1,4 @@
-local version = "0.881"
+local version = "0.8811"
 util.keep_running()
 util.require_natives(1672190175)
 
@@ -831,8 +831,8 @@ util.require_natives(1672190175)
                 elseif mess_hash == 1446064540 then
                     Notify("You are already in the session.")
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
-                --          transaction error              join session             join session            leave session           leave online                 full of ceo
-                elseif mess_hash == 991495373 or mess_hash == 587688989 or mess_hash == 15890625 or mess_hash == 99184332 or mess_hash == 1246147334 or mess_hash == 583244483 then
+                --          transaction error         transaction error (mb)   join session             join session            leave session           leave online                 full of ceo
+                elseif mess_hash == 991495373 or mess_hash == 675241754 or mess_hash == 587688989 or mess_hash == 15890625 or mess_hash == 99184332 or mess_hash == 1246147334 or mess_hash == 583244483 then
                     PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
                 elseif mess_hash ~= 0 then
                     util.toast(mess_hash, TOAST_CONSOLE)
